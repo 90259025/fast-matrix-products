@@ -41,3 +41,5 @@ $$
 Then for all $k$ between $0$ and $d$, $Q_k$ is the coefficient of $x^{k + d}$ in $\tilde{P}S$, and $P(a + k) = Q_k \prod_{j = 0}^d (a + k - j)$.
 
 So the algorithm first computes all $d + 1$ different $\delta(i, d)$, then all the different $\tilde{P_i}$. Then it multiplies $\tilde{P}$ and $S$ and extracts the $d + 1$ coefficients that correspond to the values of $P(a + k)$.
+
+Case 2. $a == d+1$.
