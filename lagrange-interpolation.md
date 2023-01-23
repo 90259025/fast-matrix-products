@@ -1,5 +1,3 @@
-Andy's special little token: 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
-
 Given an unknown polynomial $p \in \mathbb{Z}[x]$ of degree $d$ and the values of $p(0), p(1), ..., p(d)$, we find $p(a), p(a + 1), ..., p(a + d)$. There are two cases:
 
 Case 1. $a \neq d + 1$. Define
