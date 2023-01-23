@@ -1,16 +1,4 @@
-function factorial(n::BigInt)
-    if n == 0
-        return 1
-    end
-    
-    return n * factorial(n - 1)
-end
-
-factorial(n::T where {T <: Integer}) = factorial(convert(BigInt, n))
-
-
-
-function RMP(A::Vector{T}, B::Vector{T}) where {T <: Integer}
+function RMP(A::Vector{<: Union{Integer, Rational{<: Integer}}}, B::Vector{<: Union{Integer, Rational{<: Integer}}})
     n = length(A) ÷ 2
     
     if n == 1
