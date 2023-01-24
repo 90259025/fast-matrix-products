@@ -1,6 +1,22 @@
+<<<<<<< HEAD
 include("functions.jl")
 
 # test RMP
+=======
+function RMP(A::Vector{<: Union{Integer, Rational{<: Integer}}}, B::Vector{<: Union{Integer, Rational{<: Integer}}})
+    n = length(A) ÷ 2
+    
+    if n == 1
+        return [A[1] * B[1]]
+    end
+
+    α = RMP(A[1:n] .+ A[(n ÷ 2 + 1):(3n ÷ 2)], B[(n ÷ 2 + 1):end])
+    β = RMP(A[(n ÷ 2 + 1):(3n ÷ 2)], B[1:(n ÷ 2)] .- B[(n ÷ 2 + 1):end])
+    γ = RMP(A[(n ÷ 2 + 1):(3n ÷ 2)] .+ A[(n + 1):end], B[1:(n ÷ 2)])
+
+    return [α + β; γ - β]
+end
+>>>>>>> 21d35e1b7418885c6cc7c9ea818c33dbd3ae4738
 
 # 7*t^7 + 26*t^6 + 9*t^5 + 8*t^4 + 4*t^3 + 3*t^2 + 2*t + 1
 A = [1, 2, 3, 4, 8, 9, 26, 7]
