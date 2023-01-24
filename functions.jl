@@ -30,3 +30,18 @@ function MP(y::Vector{<: Union{Integer, Rational{<: Integer}}}, z::Vector{<: Uni
     γ = MP(y[1:n0], z[n1+1:n1+2*n0 - 1] .+ z[2*n1+1:2*n-1])
     return [α[1:n1] .- β[1:n1]; γ[1:n0] .+ β[1:n0]]
 end
+
+# IN: integer d
+# OUT: [1/delta(0,d), 1/delta(1,d), ..., 1/delta(d,d)]
+function compute_deltas(d::T where {T <: Integer})
+    delta = Array{Rational}(undef,d+1)
+    if iseven(d)
+        delta[1] = 1 // factorial(d) 
+    else
+        delta[1] = -1 // factorial(d)
+    end
+    for i = 1:d
+        delta[i+1] = (i-d-1)//i * delta[i]
+    end
+    return delta
+end
