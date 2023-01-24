@@ -21,59 +21,59 @@ function MP(y::Vector{<: Union{Integer, Rational}}, z::Vector{<: Union{Integer, 
         return [y[1] * z[1]]
     end
     
-    n0 = n >> 1
-    n1 = (n + 1) >> 1
+    n₀ = n >> 1
+    n₁ = (n + 1) >> 1
     
-    α = MP(y[(n0 + 1):end], z[1:(2n1 - 1)] .+ z[(n1 + 1):(3n1 - 1)])
+    α = MP(y[(n₀ + 1):end], z[1:(2n₁ - 1)] .+ z[(n₁ + 1):(3n₁ - 1)])
     
     if iseven(n)
-        β = MP(y[(n1 + 1):n] .- y[1:n0], z[(n1 + 1):(3n1 - 1)])
+        β = MP(y[(n₁ + 1):n] .- y[1:n₀], z[(n₁ + 1):(3n₁ - 1)])
     else
-        β = MP([y[n0 + 1]; y[(n1 + 1):n] .- y[1:n0]],z[(n1 + 1):(3n1 - 1)])
+        β = MP([y[n₀ + 1]; y[(n₁ + 1):n] .- y[1:n₀]],z[(n₁ + 1):(3n₁ - 1)])
     end
     
-    γ = MP(y[1:n0], z[(n1 + 1):(n1 + 2n0 - 1)] .+ z[(2n1 + 1):(2n - 1)])
+    γ = MP(y[1:n₀], z[(n₁ + 1):(n₁ + 2n₀ - 1)] .+ z[(2n₁ + 1):(2n - 1)])
     
-    return [α[1:n1] .- β[1:n1]; γ[1:n0] .+ β[1:n0]]
+    return [α[1:n₁] .- β[1:n₁]; γ[1:n₀] .+ β[1:n₀]]
 end
 
 
 # Both delta and Delta from lemma 2 of https://specfun.inria.fr/bostan/publications/BoGaSc07.pdf
 # IN: integer d
 # OUT: [1/delta(0,d), 1/delta(1,d), ..., 1/delta(d,d)]
-function compute_delta(d::T) where T <: Integer
-    delta = Array{Rational}(undef, d + 1)
+function compute_δ(d::T) where T <: Integer
+    δ = Array{Rational}(undef, d + 1)
     
     if iseven(d)
-        delta[1] = 1 // factorial(d) 
+        δ[1] = 1 // factorial(d) 
     else
-        delta[1] = -1 // factorial(d)
+        δ[1] = -1 // factorial(d)
     end
     
     for i = 1:d
-        delta[i + 1] = (i - d - 1) // i * delta[i]
+        δ[i + 1] = (i - d - 1) // i * δ[i]
     end
     
-    return delta
+    return δ
 end
 
 # IN: integer a, integer d with a < d
 # OUT: [Delta(a,i,d) for i = 0..d]
-function compute_Delta(a::T, d::S) where {T <: Integer, S <: Integer}
-    Delta = Array{Integer}(undef, d + 1)
-    Delta0 = 1
+function compute_Δ(a::T, d::S) where {T <: Integer, S <: Integer}
+    Δ = Array{Integer}(undef, d + 1)
+    Δ₀ = 1
     
     for j = 0:d
-        Delta0 *= a - j
+        Δ₀ *= a - j
     end
     
-    Delta[1] = Delta0
+    Δ[1] = Δ₀
     
     for i = 1:d
-        Delta[i + 1] = ((a + i)Delta[i]) ÷ (a + i - d - 1)
+        Δ[i + 1] = ((a + i)Δ[i]) ÷ (a + i - d - 1)
     end
     
-    return Delta
+    return Δ
 end
 
 # IN: P(0), P(1), ..., P(d); integer a
@@ -83,18 +83,19 @@ function lagrange(p::Vector{<: Union{Integer, Rational}}, a::T) where {T <: Inte
     d = length(p) - 1
 
     # obviously cache this at some point
-    delta = compute_delta(d)
-    Delta = compute_Delta(a,d)
+    δ = compute_δ(d)
+    Δ = compute_Δ(a, d)
 
     S = fill(0 // 1, 2d + 1) #padding S... can I save a zero?
     
-    p .*= delta
+    p_tilde = p .* δ
 
     for i = 0:2d
         S[i + 1] = 1 // (a + i - d)
     end
 
-    prod = MP(p, S) .* Delta
+    #Q_k is the coefficient of x^{k + d} in ̃pS, and P(a + k) = Q_k Δ[i]. Importantly, we only need the middle product here.
+    prod = MP(p_tilde, S) .* Δ
     
     return prod
 end
