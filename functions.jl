@@ -38,6 +38,7 @@ function MP(y::Vector{<: Union{Integer, Rational}}, z::Vector{<: Union{Integer, 
 end
 
 
+
 # Both delta and Delta from lemma 2 of https://specfun.inria.fr/bostan/publications/BoGaSc07.pdf
 # IN: integer d
 # OUT: [1/delta(0,d), 1/delta(1,d), ..., 1/delta(d,d)]
@@ -57,6 +58,10 @@ function compute_δ(d::T) where T <: Integer
     return δ
 end
 
+compute_delta = compute_δ
+
+
+
 # IN: integer a, integer d with a < d
 # OUT: [Delta(a,i,d) for i = 0..d]
 function compute_Δ(a::T, d::S) where {T <: Integer, S <: Integer}
@@ -75,6 +80,10 @@ function compute_Δ(a::T, d::S) where {T <: Integer, S <: Integer}
     
     return Δ
 end
+
+compute_Delta = compute_Δ
+
+
 
 # IN: P(0), P(1), ..., P(d); integer a
 # OUT: P(a), P(a+1), ..., P(a+d)
