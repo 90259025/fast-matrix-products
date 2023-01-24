@@ -82,14 +82,24 @@ end
 function lagrange(p::Vector{<: Union{Integer, Rational}}, a::T) where {T <: Integer}
     d = length(p) - 1
 
+    if a == d+1
+        # use theorem 3.1 from https://dl.acm.org/doi/pdf/10.1145/120694.120697
+        G = fill(0//1,d+2)
+        for i = 1:d+2
+            # can clean this up...
+            G[i] = (-1)^(i-1) * binomial(d+1,i-1)
+            U = p #delete this later
+        end
+    end
+
     # obviously cache this at some point
     δ = compute_δ(d)
     Δ = compute_Δ(a, d)
 
-    S = fill(0 // 1, 2d + 1) #padding S... can I save a zero?
-    
     p_tilde = p .* δ
 
+    S = fill(0 // 1, 2d + 1)
+    
     for i = 0:2d
         S[i + 1] = 1 // (a + i - d)
     end
