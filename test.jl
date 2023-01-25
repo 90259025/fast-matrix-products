@@ -1,9 +1,14 @@
 include("functions.jl")
 
-test_MP = true 
-test_δ = true
-test_Δ = true
+# test_MP = true 
+# test_δ = true
+# test_Δ = true
 test_lagrange = true
+
+test_MP = false 
+test_δ = false
+test_Δ = false
+# test_lagrange = false
 
 if test_MP
     # test MP with a bunch of randomly generated inputs
@@ -48,4 +53,9 @@ if test_lagrange
     # Test lagrange
     println(lagrange([1//1,2,3],8)==[9//1,10//1,11//1])
     println(lagrange([0//1, 127, 2186, 16383, 78124, 279935, 823542, 2097151],10)==[19487170//1,  35831807//1,  62748516//1,  105413503//1,  170859374//1,  268435455//1,  410338672//1,  612220031//1])
+    # maybe this should test if it equals ints instead of rationals
+    println(lagrange([1,8,27,64],4)==[125//1, 216//1, 343//1, 512//1])
+    println(lagrange([1//4, -7//4, -31//4],3)==[-71//4, -127//4, -199//4])
+    println(lagrange([-7//2, -797//360, -179947//90, -8894831//120, -85280963//90, -493110857//72, -1036653841//30, -48973005053//360, -40185312907//90, -51009804373//40], 10) == [-58738621183//18, -2750188672237//360, -498472099889//30, -12230002801613//360, -5930345300803//90, -2931007133459//24, -19579854846683//90, -134741703303133//360, -6243471811443//10, -364748503947917//360])
+
 end
