@@ -94,13 +94,12 @@ function lagrange(p::Vector{<: Union{Integer, Rational}}, a::T) where {T <: Inte
         # use theorem 3.1 from https://dl.acm.org/doi/pdf/10.1145/120694.120697
         G = fill(0//1,2*d+4)
         for i = 1:d+2
-            # can clean this up...
-            G[i] = (-1)^(i-1) * binomial(d+1,i-1)
+            G[i] = (2*(i&1)-1) * binomial(d+1,i-1)
+            # G[i] = (-1)^(i-1) * binomial(d+1,i-1)
         end
         H = fill(0//1,2*d+4)
         for i = 1:d+3 #I think 1:d+1 works too but I'm a little nervous about changing it
-            # seriously clean this up
-            H[d+1+i] = -(-1)^(i-1) * binomial(-d-1,i-1)
+            H[d+1+i] = -(2*(i&1)-1) * binomial(-d-1,i-1)
         end
         F1 = [0;MP([p;0],G)[1:end-1]]
         return MP(F1,H)[2:end]
