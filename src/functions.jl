@@ -186,3 +186,67 @@ function lagrange(p::Vector{<: Union{Integer, Rational}}, a::T) where {T <: Inte
     
     return prod
 end
+
+
+
+
+@doc raw"""
+    lagrange_matrix(A)
+
+Lagrange interpolate all entries of a list of d+1 matrices, returns 3*(d+1) matrices
+
+Applies the following to each entry of the matrices, with a = d+1, 2d+1, 3d+1:
+For a polynomial $P$, apply Lagrange interpolation to the values
+$p = [P(0), P(1), ..., P(d)]$ to produce a vector of
+shifted values $[P(a), P(a + 1), ..., P(a + d)]$.
+
+# Example
+```jldoctest
+julia> Main.OurModuleName.lagrange(lagrange_matrix([[0:2  3:5  6:8],[9:11  12:14  15:17]]))
+54-element Vector{Integer}:
+  [[18 21 24; 19 22 25; 20 23 26], [27 30 33; 28 31 34; 29 32 35], 
+  [36 39 42; 37 40 43; 38 41 44], [45 48 51; 46 49 52; 47 50 53], 
+  [54 57 60; 55 58 61; 56 59 62], [63 66 69; 64 67 70; 65 68 71]]
+```
+"""
+
+# IN: list of d+1 matrices of polynomials of degree at most d
+#     ie as a runs through the list, a_ij = P(0), P(1), ..., P(d)
+# OUT: 3d + 1 matrices corresponding to P(d+1), ..., P(4d+1)
+# Cruz please look at this function declaration, I want it to take Integer or Rational
+function lagrange_matrix(ls::Array{Matrix{T}}) where {T <: Integer}
+    d = length(ls) - 1
+
+    # surely there's a better way to do this
+    MATRIX_DIMENSION = length(ls[1,:,:][1][1,:])
+
+    # ith entry is a (matdim) by (matdim) matrix
+    # I'd prefer to not initialize this to zeros but I'm not sure how else to do this
+    return_ls = Array{Matrix{Int64}}(undef,3*(d+1))
+    for k in 1:3*(d+1)
+        return_ls[k] = zeros(Int64,MATRIX_DIMENSION,MATRIX_DIMENSION)
+    end
+    for i in 1:MATRIX_DIMENSION
+        for j in 1:MATRIX_DIMENSION
+            v1 = lagrange([ls[k][i,j] for k in 1:d+1],d+1)
+            v2 = lagrange([ls[k][i,j] for k in 1:d+1],2*d+2)
+            v3 = lagrange([ls[k][i,j] for k in 1:d+1],3*d+3)
+            for k in 1:d+1
+                return_ls[k][i,j] = v1[k]
+                return_ls[k+d+1][i,j] = v2[k]
+                return_ls[k+2*(d+1)][i,j] = v3[k]
+            end
+        end
+    end
+    return return_ls
+end
+
+
+# test is
+# A = [0:2  3:5  6:8]
+# B = [9:11  12:14  15:17]
+# println(lagrange_matrix([A,B]))
+# should give 
+# [[18 21 24; 19 22 25; 20 23 26], [27 30 33; 28 31 34; 29 32 35], 
+# [36 39 42; 37 40 43; 38 41 44], [45 48 51; 46 49 52; 47 50 53], 
+# [54 57 60; 55 58 61; 56 59 62], [63 66 69; 64 67 70; 65 68 71]]
