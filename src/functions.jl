@@ -146,19 +146,19 @@ julia> Main.OurModuleName.lagrange([1//4, -7//4, -31//4], 3)
  -199//4
 ```
 """
-function lagrange(p::Vector{<: Union{Integer, Rational}}, a::T) where {T <: Integer}
+function lagrange(p::Vector{T1}, a::T2)::Vector{T1} where {T1 <: Union{Integer, Rational}, T2 <: Integer}
     d = length(p) - 1
 
     if a == d+1
         # use theorem 3.1 from https://dl.acm.org/doi/pdf/10.1145/120694.120697
-        G = fill(0//1, 2d + 4)
+        G = zeros(T1, 2d + 4)
 
         for i = 1:(d + 2)
             G[i] = (2(i & 1) - 1) * binomial(d + 1, i - 1)
             # G[i] = (-1)^(i-1) * binomial(d+1,i-1)
         end
 
-        H = fill(0//1,2d + 4)
+        H = zeros(T1, 2d + 4)
 
         for i = 1:(d + 3) #I think 1:d+1 works too but I'm a little nervous about changing it
             H[d + 1 + i] = -(2(i & 1) - 1) * binomial(-d - 1, i - 1)
@@ -175,7 +175,7 @@ function lagrange(p::Vector{<: Union{Integer, Rational}}, a::T) where {T <: Inte
 
     p_tilde = p .* δ
 
-    S = fill(0 // 1, 2d + 1)
+    S = zeros(Rational{Int}, 2d + 1)
     
     for i = 0:2d
         S[i + 1] = 1 // (a + i - d)
@@ -207,41 +207,64 @@ shifted values $[P(a), P(a + 1), ..., P(a + d)]$.
 
 # Example
 ```jldoctest
-julia> Main.OurModuleName.lagrange_matrix([[0:2  3:5  6:8],[9:11  12:14  15:17]])
-54-element Vector{Integer}:
-  [[18 21 24; 19 22 25; 20 23 26], [27 30 33; 28 31 34; 29 32 35], 
-  [36 39 42; 37 40 43; 38 41 44], [45 48 51; 46 49 52; 47 50 53], 
-  [54 57 60; 55 58 61; 56 59 62], [63 66 69; 64 67 70; 65 68 71]]
+julia> Main.OurModuleName.lagrange_matrix([0:2 3:5 6:8 ;;; 9:11 12:14 15:17])
+3×3×6 Array{Int64, 3}:
+[:, :, 1] =
+ 18  21  24
+ 19  22  25
+ 20  23  26
+
+[:, :, 2] =
+ 27  30  33
+ 28  31  34
+ 29  32  35
+
+[:, :, 3] =
+ 36  39  42
+ 37  40  43
+ 38  41  44
+
+[:, :, 4] =
+ 45  48  51
+ 46  49  52
+ 47  50  53
+
+[:, :, 5] =
+ 54  57  60
+ 55  58  61
+ 56  59  62
+
+[:, :, 6] =
+ 63  66  69
+ 64  67  70
+ 65  68  71
 ```
 """
-function lagrange_matrix(ls::Array{Matrix{T}}) where {T <: Union{Integer, Rational}}
-    d = length(ls) - 1
+function lagrange_matrix(matrices_to_interpolate::Array{T, 3}) where {T <: Union{Integer, Rational}}
+    d = size(matrices_to_interpolate, 3) - 1
 
     # surely there's a better way to do this
-    MATRIX_DIMENSION = length(ls[1,:,:][1][1,:])
+    MATRIX_DIMENSION = size(matrices_to_interpolate, 1)
 
     # ith entry is a (matdim) by (matdim) matrix
     # I'd prefer to not initialize this to zeros but I'm not sure how else to do this
-    return_ls = Array{Matrix{Int64}}(undef,3*(d+1))
-    
-    for k in 1:3*(d+1)
-        return_ls[k] = zeros(Int64,MATRIX_DIMENSION,MATRIX_DIMENSION)
-    end
+    interpolated_matrices = zeros(T, MATRIX_DIMENSION, MATRIX_DIMENSION, 3(d+1))
     
     for i in 1:MATRIX_DIMENSION
         for j in 1:MATRIX_DIMENSION
-            v1 = lagrange([ls[k][i,j] for k in 1:d+1],d+1)
-            v2 = lagrange([ls[k][i,j] for k in 1:d+1],2*d+2)
-            v3 = lagrange([ls[k][i,j] for k in 1:d+1],3*d+3)
+            v1 = lagrange([matrices_to_interpolate[i, j, k] for k in 1:d+1], d+1)
+            v2 = lagrange([matrices_to_interpolate[i, j, k] for k in 1:d+1], 2d+2)
+            v3 = lagrange([matrices_to_interpolate[i, j, k] for k in 1:d+1], 3d+3)
+
             for k in 1:d+1
-                return_ls[k][i,j] = v1[k]
-                return_ls[k+d+1][i,j] = v2[k]
-                return_ls[k+2*(d+1)][i,j] = v3[k]
+                interpolated_matrices[i, j, k] = v1[k]
+                interpolated_matrices[i, j, k + d + 1] = v2[k]
+                interpolated_matrices[i, j, k + 2(d+1)] = v3[k]
             end
         end
     end
     
-    return return_ls
+    return interpolated_matrices
 end
 
 
