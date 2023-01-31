@@ -1,6 +1,8 @@
 import random
-mat_dim = 5
-function_degree = 2
+mat_dim = 64
+function_degree = 10
+
+USE_BIG_INT = True
 
 A_in = [_ for _ in range(function_degree+1)]
 A_out =  [_ for _ in range(3*(function_degree+1))]
@@ -41,7 +43,7 @@ printstr += "println(lagrange_matrix(" + s + ") == "
 
 s = "["
 for ind in range(3*(function_degree+1)):
-    line_str = "["
+    line_str = ""
     for i in range(mat_dim):
         for j in range(mat_dim):
             line_str += str(A_out[ind][i][j])
@@ -50,10 +52,25 @@ for ind in range(3*(function_degree+1)):
             elif i != mat_dim-1:
                 line_str += "; "
             else:
-                line_str += "], "
+                line_str += " ;;; "
     s += line_str
 s += "]"
-s = s.replace("], ]","]]")
+s = s.replace("], ]","]")
 
 printstr += s+")"
-print(printstr)
+printstr = printstr.replace('[[','[').replace(']])','])').replace('], [',' ;;; ').replace(']]','').replace('],','').replace(' ;;; ]',']')
+
+if not USE_BIG_INT:
+    print(printstr)
+
+else:
+# optional BigInt conversion
+
+# if you're doing this in a sage notebook this will probably crash for large matrices
+
+    printstr = printstr.replace('([','(BigInt.([').replace('== [',') == BigInt.([')
+    printstr += ')'
+    print(printstr)
+
+    # with open('text_dump.txt','w') as o:
+        # o.write(printstr)
