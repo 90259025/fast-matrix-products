@@ -52,9 +52,9 @@ end
 @doc raw"""
     compute_δ(d)
 
-Compute the δ function from lemma 2 in [BGS07](https://specfun.inria.fr/bostan/publications/BoGaSc07.pdf).
+Compute $\dfrac{1}{δ}$ where δ is the function from lemma 2 in [BGS07](https://specfun.inria.fr/bostan/publications/BoGaSc07.pdf).
 
-For a degree $d$, return a vector $[δ_0,..., δ_d]$,
+For a degree $d$, return a vector $\left[\dfrac{1}{δ_0},..., \dfrac{1}{δ_d}\right]$,
 where $δ_i = \prod_{j = 0, j \neq i}^d (i - j)$.
 
 # Example
@@ -193,7 +193,6 @@ end
 # IN: list of d+1 matrices of polynomials of degree at most d
 #     ie as a runs through the list, a_ij = P(0), P(1), ..., P(d)
 # OUT: 3(d + 1) (?) matrices corresponding to P(d+1), ..., P(4d+1)
-# Cruz please look at this function declaration, I want it to take Integer or Rational
 
 @doc raw"""
     lagrange_matrix(A)
@@ -243,13 +242,14 @@ julia> Main.OurModuleName.lagrange_matrix([0:2 3:5 6:8 ;;; 9:11 12:14 15:17])
 function lagrange_matrix(matrices_to_interpolate::Array{T, 3}) where {T <: Union{Integer, Rational}}
     d = size(matrices_to_interpolate, 3) - 1
 
-    # surely there's a better way to do this
     MATRIX_DIMENSION = size(matrices_to_interpolate, 1)
 
     # ith entry is a (matdim) by (matdim) matrix
     # I'd prefer to not initialize this to zeros but I'm not sure how else to do this
     interpolated_matrices = zeros(T, MATRIX_DIMENSION, MATRIX_DIMENSION, 3(d+1))
     
+
+    # the thing to do would be to compute \delta here and pass it in to each call
     for i in 1:MATRIX_DIMENSION
         for j in 1:MATRIX_DIMENSION
             v1 = lagrange([matrices_to_interpolate[i, j, k] for k in 1:d+1], d+1)
