@@ -24,7 +24,7 @@ julia> Main.OurModuleName.MP([-7//10, 1, -2], [9//4, -1//4, -2//5, 9//8, -4//9, 
   161//72
 ```
 """
-function MP(y::Vector{<: Union{Integer, Rational}}, z::Vector{<: Union{Integer, Rational}})
+function MP(y::Array{<: Union{Integer, Rational}}, z::Array{<: Union{Integer, Rational}})
     n = length(y)
     
     if n == 1
@@ -267,5 +267,12 @@ function lagrange_matrix(matrices_to_interpolate::Array{T, 3}) where {T <: Union
     return interpolated_matrices
 end
 
+# need to nail down what the recursive product does
 
-
+# IN: A list of polynomial matrices (M_ij evaluated at 0, 1, ..., max_degree); an integer a
+# OUT: prod_{k=0}^{a maybe minus 1} M(k)
+function matrix_product(starter_matrices::Array{T, 3}, a::S) where {T <: Union{Integer, Rational}, S<:Integer}
+    d = size(starter_matrices, 3) - 1
+    # first, need to lagrange interpolate to get the nearest power of 2 matrices
+    # next, do the recursive product formula
+end
