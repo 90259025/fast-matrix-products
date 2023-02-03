@@ -146,7 +146,7 @@ julia> Main.OurModuleName.lagrange([1//4, -7//4, -31//4], 3)
  -199//4
 ```
 """
-function lagrange(p::Vector{T1}, a::T2)::Vector{T1} where {T1 <: Union{Integer, Rational}, T2 <: Integer}
+function lagrange(p::Vector{T1}, a::T2; S::Vector=Vector(), δ::Vector=Vector(), Δ::Vector=Vector())::Vector{T1} where {T1 <: Union{Integer, Rational}, T2 <: Integer}
     d = length(p) - 1
 
     if a == d+1
@@ -169,16 +169,22 @@ function lagrange(p::Vector{T1}, a::T2)::Vector{T1} where {T1 <: Union{Integer, 
         return MP(F1, H)[2:end]
     end
 
-    # obviously cache this at some point
-    δ = compute_δ(d)
-    Δ = compute_Δ(a, d)
+    if (length(δ) == 0)
+        δ = compute_δ(d)
+    end
+
+    if (length(Δ) == 0)
+        Δ = compute_Δ(a, d)
+    end
 
     p_tilde = p .* δ
 
-    S = zeros(Rational{Int}, 2d + 1)
-    
-    for i = 0:2d
-        S[i + 1] = 1 // (a + i - d)
+    if (length(S) == 0)
+        S = zeros(Rational{Int}, 2d + 1)
+
+        for i = 0:2d
+            S[i + 1] = 1 // (a + i - d)
+        end
     end
 
     #Q_k is the coefficient of x^{k + d} in ̃pS, and P(a + k) = Q_k Δ[i]. Importantly, we only need the middle product here.
@@ -249,12 +255,23 @@ function lagrange_matrix(matrices_to_interpolate::Array{T, 3}) where {T <: Union
     interpolated_matrices = zeros(T, MATRIX_DIMENSION, MATRIX_DIMENSION, 3(d+1))
     
 
+    δ = compute_δ(d)
+    Δ2 = compute_Δ(2d+2, d)
+    Δ3 = compute_Δ(3d+3, d)
+
+    S2 = zeros(Rational{Int}, 2d + 1)
+    S3 = zeros(Rational{Int}, 2d + 1)
+    for i = 0:2d
+        S2[i + 1] = 1 // (2d+2 + i - d)
+        S3[i + 1] = 1 // (3d+3 + i - d)
+    end
+
     # the thing to do would be to compute \delta here and pass it in to each call
     for i in 1:MATRIX_DIMENSION
         for j in 1:MATRIX_DIMENSION
             v1 = lagrange([matrices_to_interpolate[i, j, k] for k in 1:d+1], d+1)
-            v2 = lagrange([matrices_to_interpolate[i, j, k] for k in 1:d+1], 2d+2)
-            v3 = lagrange([matrices_to_interpolate[i, j, k] for k in 1:d+1], 3d+3)
+            v2 = lagrange([matrices_to_interpolate[i, j, k] for k in 1:d+1], 2d+2; S = S2, δ, Δ = Δ2)
+            v3 = lagrange([matrices_to_interpolate[i, j, k] for k in 1:d+1], 3d+3; S = S3, δ, Δ = Δ3)
 
             for k in 1:d+1
                 interpolated_matrices[i, j, k] = v1[k]
