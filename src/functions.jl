@@ -70,7 +70,7 @@ julia> Main.OurModuleName.compute_δ(5)
 ```
 """
 function compute_δ(d::T) where T <: Integer
-    δ = Array{Rational}(undef, d + 1)
+    δ = Array{Rational{BigInt}}(undef, d + 1)
     
     if iseven(d)
         δ[1] = 1 // factorial(d) 
@@ -108,7 +108,7 @@ julia> Main.OurModuleName.compute_Δ(5, 3)
 ```
 """
 function compute_Δ(a::T, d::S) where {T <: Integer, S <: Integer}
-    Δ = Array{Integer}(undef, d + 1)
+    Δ = Array{BigInt}(undef, d + 1)
     Δ₀ = 1
     
     for j = 0:d
@@ -180,7 +180,7 @@ function lagrange(p::Vector{T1}, a::T2; S::Vector=Vector(), δ::Vector=Vector(),
     p_tilde = p .* δ
 
     if (length(S) == 0)
-        S = zeros(Rational{Int}, 2d + 1)
+        S = zeros(Rational{BigInt}, 2d + 1)
 
         for i = 0:2d
             S[i + 1] = 1 // (a + i - d)
@@ -260,8 +260,8 @@ function lagrange_matrix(matrices_to_interpolate::Array{T, 3}) where {T <: Union
     Δ2 = compute_Δ(2d+2, d)
     Δ3 = compute_Δ(3d+3, d)
 
-    S2 = zeros(Rational{Int}, 2d + 1)
-    S3 = zeros(Rational{Int}, 2d + 1)
+    S2 = zeros(Rational{BigInt}, 2d + 1)
+    S3 = zeros(Rational{BigInt}, 2d + 1)
     for i = 0:2d
         S2[i + 1] = 1 // (2d+2 + i - d)
         S3[i + 1] = 1 // (3d+3 + i - d)
@@ -299,7 +299,7 @@ function matrix_product(starter_matrices::Array{T, 3}, a::S) where {T <: Union{I
     for j = 0:(num_steps - 1)
         smat = [smat ;;; lagrange_matrix(smat)]
 
-        println("before slicing: ", smat)
+        # println("before slicing: ", smat)
 
         # I'm sure this can be cleaned up
         for i in 1:(2^(j+1))*(d) + 1
@@ -308,7 +308,7 @@ function matrix_product(starter_matrices::Array{T, 3}, a::S) where {T <: Union{I
 
         smat = smat[:, :, 1:(2^(j+1))*(d) + 1]
 
-        println("after slicing: ", smat)
+        # println("after slicing: ", smat)
     end
 
     # then one big ol product
@@ -317,7 +317,7 @@ function matrix_product(starter_matrices::Array{T, 3}, a::S) where {T <: Union{I
     #Multiply matrices according to price is right rules 
     product_size = floor(Int, a / ((2^num_steps)*(d)))
 
-    println(product_size, smat)
+    # println(product_size, smat)
 
     for j = 2:product_size
         smat_prod = smat_prod * smat[:, :, j]
@@ -326,4 +326,4 @@ function matrix_product(starter_matrices::Array{T, 3}, a::S) where {T <: Union{I
     return smat_prod
 end
 
-println(matrix_product([0:2 3:5 6:8 ;;; 9:11 12:14 15:17], 8))
+println(matrix_product(BigInt.([0:2 3:5 6:8 ;;; 9:11 12:14 15:17]), 2048))
