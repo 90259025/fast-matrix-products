@@ -252,7 +252,8 @@ function lagrange_matrix(matrices_to_interpolate::Array{T, 3}) where {T <: Union
 
     # ith entry is a (matdim) by (matdim) matrix
     # I'd prefer to not initialize this to zeros but I'm not sure how else to do this
-    interpolated_matrices = zeros(T, MATRIX_DIMENSION, MATRIX_DIMENSION, 3(d+1))
+    # Todo: this should probably only be 3d + 1
+    interpolated_matrices = zeros(T, MATRIX_DIMENSION, MATRIX_DIMENSION, 3(d + 1))
     
 
     δ = compute_δ(d)
@@ -288,8 +289,41 @@ end
 
 # IN: A list of polynomial matrices (M_ij evaluated at 0, 1, ..., max_degree); an integer a
 # OUT: prod_{k=0}^{a maybe minus 1} M(k)
-function matrix_product(starter_matrices::Array{T, 3}, a::S) where {T <: Union{Integer, Rational}, S<:Integer}
+function matrix_product(starter_matrices::Array{T, 3}, a::S) where {T <: Union{Integer, Rational}, S <: Integer}
+    # currently assumes a is a power of 2 which is greater than d
     d = size(starter_matrices, 3) - 1
-    # first, need to lagrange interpolate to get the nearest power of 2 matrices
-    # next, do the recursive product formula
+
+    smat = copy(starter_matrices)
+    num_steps = ceil(Int, log2(sqrt(a) / d))
+
+    for j = 0:(num_steps - 1)
+        smat = [smat ;;; lagrange_matrix(smat)]
+
+        println("before slicing: ", smat)
+
+        # I'm sure this can be cleaned up
+        for i in 1:(2^(j+1))*(d) + 1
+            smat[:, :, i] = smat[:, :, 2i - 1] * smat[:, :, 2i]
+        end
+
+        smat = smat[:, :, 1:(2^(j+1))*(d) + 1]
+
+        println("after slicing: ", smat)
+    end
+
+    # then one big ol product
+    smat_prod = smat[:, :, 1]
+
+    #Multiply matrices according to price is right rules 
+    product_size = floor(Int, a / ((2^num_steps)*(d)))
+
+    println(product_size, smat)
+
+    for j = 2:product_size
+        smat_prod = smat_prod * smat[:, :, j]
+    end
+    
+    return smat_prod
 end
+
+println(matrix_product([0:2 3:5 6:8 ;;; 9:11 12:14 15:17], 8))
