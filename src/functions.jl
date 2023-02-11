@@ -60,7 +60,7 @@ where $δ_i = \prod_{j = 0, j \neq i}^d (i - j)$.
 # Example
 ```jldoctest
 julia> Main.OurModuleName.compute_δ(5)
-6-element Vector{Rational}:
+6-element Vector{Rational{BigInt}}:
  -1//120
   1//24
  -1//12
@@ -73,9 +73,9 @@ function compute_δ(d::T) where T <: Integer
     δ = Array{Rational{BigInt}}(undef, d + 1)
     
     if iseven(d)
-        δ[1] = 1 // factorial(d) 
+        δ[1] = 1 // factorial(big(d)) 
     else
-        δ[1] = -1 // factorial(d)
+        δ[1] = -1 // factorial(big(d))
     end
     
     for i = 1:d
@@ -100,7 +100,7 @@ where $Δ_i = \prod_{j = 0}^d (a + i - j)$.
 # Example
 ```jldoctest
 julia> Main.OurModuleName.compute_Δ(5, 3)
-4-element Vector{Integer}:
+4-element Vector{BigInt}:
   120
   360
   840
@@ -109,7 +109,7 @@ julia> Main.OurModuleName.compute_Δ(5, 3)
 """
 function compute_Δ(a::T, d::S) where {T <: Integer, S <: Integer}
     Δ = Array{BigInt}(undef, d + 1)
-    Δ₀ = 1
+    Δ₀ = big(1)
     
     for j = 0:d
         Δ₀ *= a - j
@@ -154,14 +154,14 @@ function lagrange(p::Vector{T1}, a::T2; S::Vector=Vector(), δ::Vector=Vector(),
         G = zeros(T1, 2d + 4)
 
         for i = 1:(d + 2)
-            G[i] = (2(i & 1) - 1) * binomial(d + 1, i - 1)
+            G[i] = (2(i & 1) - 1) * binomial(big(d + 1), big(i - 1))
             # G[i] = (-1)^(i-1) * binomial(d+1,i-1)
         end
 
         H = zeros(T1, 2d + 4)
 
         for i = 1:(d + 3) #I think 1:d+1 works too but I'm a little nervous about changing it
-            H[d + 1 + i] = -(2(i & 1) - 1) * binomial(-d - 1, i - 1)
+            H[d + 1 + i] = -(2(i & 1) - 1) * binomial(big(-d - 1), big(i - 1))
         end
 
         F1 = [0; MP([p; 0], G)[1:(end - 1)]]
@@ -247,7 +247,7 @@ julia> Main.OurModuleName.lagrange_matrix([0:2 3:5 6:8 ;;; 9:11 12:14 15:17])
 """
 function lagrange_matrix(matrices_to_interpolate::Array{T, 3}) where {T <: Union{Integer, Rational}}
     d = size(matrices_to_interpolate, 3) - 1
-
+    
     MATRIX_DIMENSION = size(matrices_to_interpolate, 1)
 
     # ith entry is a (matdim) by (matdim) matrix
@@ -326,4 +326,4 @@ function matrix_product(starter_matrices::Array{T, 3}, a::S) where {T <: Union{I
     return smat_prod
 end
 
-println(matrix_product(BigInt.([0:2 3:5 6:8 ;;; 9:11 12:14 15:17]), 2048))
+#println(matrix_product(BigInt.([0:2 3:5 6:8 ;;; 9:11 12:14 15:17]), 2^16))
