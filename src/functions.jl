@@ -25,6 +25,7 @@ julia> Main.OurModuleName.MP([-7//10, 1, -2], [9//4, -1//4, -2//5, 9//8, -4//9, 
 ```
 """
 function MP(y::Array{<: Union{Integer, Rational}}, z::Array{<: Union{Integer, Rational}})
+    # corollary 2 from https://hal.inria.fr/inria-00071921/document
     n = length(y)
     
     if n == 1
