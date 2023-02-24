@@ -1,7 +1,11 @@
 import random
 mat_dim = 5
-function_degree = 2
-len_prod = 8
+function_degree = 1
+len_prod = 2^16
+
+# optional argument to reduce answer mod p
+# p = 0
+p = Primes().next(2^11)
 
 USE_BIG_INT = True
 
@@ -22,6 +26,8 @@ for i in range(mat_dim):
 A_in = [matrix(_) for _ in A_in]
 A_out = matrix(A_out)
 A_out = prod([A_out(i) for i in range(len_prod)])
+if p > 0:
+    A_out = A_out % p
 
 printstr =""
 s = "["
@@ -39,7 +45,10 @@ for ind in range((function_degree+1)):
     s += line_str
 s += "]"
 s = s.replace("], ]","]]")
-printstr += "println(matrix_product(" + s + " " + ") == "
+if p > 0:
+    printstr += "println(mod.(matrix_product(" + s + " " + ") == "
+else:
+    printstr += "println(matrix_product(" + s + " " + ") == "
 
 s = "["
 line_str = ""
@@ -58,7 +67,11 @@ s = s.replace("], ]","]")
 
 printstr += s+")"
 printstr = printstr.replace('[[','[').replace(']])','])').replace('], [',' ;;; ').replace(']]','').replace('],','').replace(' ;;; ]',']')
-printstr = printstr.replace(') == ', "]), " + str(len_prod) + ') == ')
+
+if p > 0:
+    printstr = printstr.replace(') == ', "]), " + str(len_prod) + '),' + str(p) + ') == ')
+else:
+    printstr = printstr.replace(') == ', "]), " + str(len_prod) + ') == ')
 
 if not USE_BIG_INT:
     print(printstr)
