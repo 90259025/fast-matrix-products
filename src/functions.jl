@@ -295,21 +295,10 @@ function matrix_product(starter_matrices::Array{T, 3}, a::S) where {T <: Union{I
     d = size(starter_matrices, 3) - 1
 
     smat = copy(starter_matrices)
-    num_steps = ceil(Int, log2(sqrt(a) / d))
+    num_steps = ceil(Int, log2(sqrt(a)))
 
     for j = 0:(num_steps - 1)
-        smat = [smat ;;; lagrange_matrix(smat)]
-
-        # println("before slicing: ", smat)
-
-        # I'm sure this can be cleaned up
-        for i in 1:(2^(j+1))*(d) + 1
-            smat[:, :, i] = smat[:, :, 2i - 1] * smat[:, :, 2i]
-        end
-
-        smat = smat[:, :, 1:(2^(j+1))*(d) + 1]
-
-        # println("after slicing: ", smat)
+        smat = matrix_product_step(smat, d, j)
     end
 
     # then one big ol product
@@ -327,4 +316,21 @@ function matrix_product(starter_matrices::Array{T, 3}, a::S) where {T <: Union{I
     return smat_prod
 end
 
-#println(matrix_product(BigInt.([0:2 3:5 6:8 ;;; 9:11 12:14 15:17]), 2^16))
+
+
+function matrix_product_step(smat::Array{T, 3}, d::S, j::R) where {T <: Union{Integer, Rational}, S <: Integer, R <: Integer}
+    smat = [smat ;;; lagrange_matrix(smat)]
+
+    # println("before slicing: ", smat)
+
+    # I'm sure this can be cleaned up
+    for i in 1:(2^(j+1))*(d) + 1
+        smat[:, :, i] = smat[:, :, 2i - 1] * smat[:, :, 2i]
+    end
+
+    smat = smat[:, :, 1:(2^(j+1))*(d) + 1]
+
+    return smat
+end
+
+println(matrix_product(BigInt.([0:2 3:5 6:8 ;;; 9:11 12:14 15:17 ]), 2^4))
