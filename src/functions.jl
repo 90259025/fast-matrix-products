@@ -290,6 +290,21 @@ end
 
 # IN: A list of polynomial matrices (M_ij evaluated at 0, 1, ..., max_degree); an integer a
 # OUT: prod_{k=0}^{a maybe minus 1} M(k)
+
+@doc raw"""
+    matrix_product(T, a)
+
+Compute the product T(a-1)T(a-2)...T(a) a matrix T.
+
+# Example
+```jldoctest
+julia> Main.OurModuleName.matrix_product(BigInt.([0:2 3:5 6:8 ;;; 9:11 12:14 15:17 ]), 2^2)
+3×3 Matrix{BigInt}:
+  688662   762210   835758
+  907092  1003968  1100844
+ 1125522  1245726  1365930
+```
+"""
 function matrix_product(starter_matrices::Array{T, 3}, a::S) where {T <: Union{Integer, Rational}, S <: Integer}
     # currently assumes a is a power of 2 which is greater than d
     d = size(starter_matrices, 3) - 1
@@ -332,5 +347,3 @@ function matrix_product_step(smat::Array{T, 3}, d::S, j::R) where {T <: Union{In
 
     return smat
 end
-
-println(matrix_product(BigInt.([0:2 3:5 6:8 ;;; 9:11 12:14 15:17 ]), 2^4))
