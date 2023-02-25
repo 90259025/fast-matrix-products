@@ -1,3 +1,5 @@
+debug = false
+
 @doc raw"""
     MP(y, z)
 
@@ -197,10 +199,21 @@ function matrix_product(starter_matrices::Array{T, 3}, a::S) where {T <: Union{I
 
     smat = copy(starter_matrices)
     num_steps = ceil(Int, log2(sqrt(a)))
-
-    for j = 0:(num_steps - 1)
-        smat = matrix_product_step(smat, d, j)
+    
+    if debug
+        println(num_steps)
+        for j = 0:(num_steps - 1)
+            println(j)
+            smat = matrix_product_step(smat, d, j)
+        end
     end
+
+    else
+        for j = 0:(num_steps - 1)
+            smat = matrix_product_step(smat, d, j)
+        end
+    end
+
 
     # then one big ol product
     smat_prod = smat[:, :, 1]
