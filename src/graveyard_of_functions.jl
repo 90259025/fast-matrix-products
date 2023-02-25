@@ -51,46 +51,148 @@ end
 
 
 @doc raw"""
-    lagrange(p)
+    compute_δ(d)
 
-Lagrange interpolate a vector $p$ of polynomial outputs to a new position $degree+1$.
+Compute $\dfrac{1}{δ}$ where δ is the function from lemma 2 in [BGS07](https://specfun.inria.fr/bostan/publications/BoGaSc07.pdf).
 
-For a polynomial $P$, apply Lagrange interpolation to the values
-$p = [P(0), P(1), ..., P(d)]$ to produce a vector of
-shifted values $[P(d+1), P(d + 2), ..., P(2d + 1)]$.
+For a degree $d$, return a vector $\left[\dfrac{1}{δ_0},..., \dfrac{1}{δ_d}\right]$,
+where $δ_i = \prod_{j = 0, j \neq i}^d (i - j)$.
 
 # Example
 ```jldoctest
-julia> Main.OurModuleName.lagrange([1, -7, -31])
-3-element Vector{Int64}:
-  -71
- -127
- -199
+julia> Main.OurModuleName.compute_δ(5)
+6-element Vector{Rational{BigInt}}:
+ -1//120
+  1//24
+ -1//12
+  1//12
+ -1//24
+  1//120
 ```
 """
-function lagrange(p::Vector{T1})::Vector{T1} where {T1 <: Union{Integer, Rational}}
-    d = length(p) - 1
-    # a = d + 1
-
-    # use theorem 3.1 from https://dl.acm.org/doi/pdf/10.1145/120694.120697
-    G = zeros(T1, 2d + 4)
-
-    for i = 1:(d + 2)
-        G[i] = (2(i & 1) - 1) * binomial(big(d + 1), big(i - 1))
-        # G[i] = (-1)^(i-1) * binomial(d+1,i-1)
+function compute_δ(d::T) where T <: Integer
+    δ = Array{Rational{BigInt}}(undef, d + 1)
+    
+    if iseven(d)
+        δ[1] = 1 // factorial(big(d)) 
+    else
+        δ[1] = -1 // factorial(big(d))
     end
-
-    H = zeros(T1, 2d + 4)
-
-    for i = 1:(d + 3) #I think 1:d+1 works too but I'm a little nervous about changing it
-        H[d + 1 + i] = -(2(i & 1) - 1) * binomial(big(-d - 1), big(i - 1))
+    
+    for i = 1:d
+        δ[i + 1] = (i - d - 1) // i * δ[i]
     end
-
-    F1 = [0; MP([p; 0], G)[1:(end - 1)]]
-
-    return MP(F1, H)[2:end]
+    
+    return δ
 end
 
+compute_delta = compute_δ
+
+
+
+@doc raw"""
+    compute_Δ(a, d)
+
+Compute the Δ function from lemma 2 in [BGS07](https://specfun.inria.fr/bostan/publications/BoGaSc07.pdf).
+
+For a degree $d$ and shift $a > d$, return a vector $[Δ_0,..., Δ_d]$,
+where $Δ_i = \prod_{j = 0}^d (a + i - j)$.
+
+# Example
+```jldoctest
+julia> Main.OurModuleName.compute_Δ(5, 3)
+4-element Vector{BigInt}:
+  120
+  360
+  840
+ 1680
+```
+"""
+function compute_Δ(a::T, d::S) where {T <: Integer, S <: Integer}
+    Δ = Array{BigInt}(undef, d + 1)
+    Δ₀ = big(1)
+    
+    for j = 0:d
+        Δ₀ *= a - j
+    end
+    
+    Δ[1] = Δ₀
+    
+    for i = 1:d
+        Δ[i + 1] = ((a + i)Δ[i]) ÷ (a + i - d - 1)
+    end
+    
+    return Δ
+end
+
+compute_Delta = compute_Δ
+
+
+
+@doc raw"""
+    lagrange(p, a)
+
+Lagrange interpolate a vector $p$ of polynomial outputs to a new position $a$.
+
+For a polynomial $P$, apply Lagrange interpolation to the values
+$p = [P(0), P(1), ..., P(d)]$ to produce a vector of
+shifted values $[P(a), P(a + 1), ..., P(a + d)]$.
+
+# Example
+```jldoctest
+julia> Main.OurModuleName.lagrange([1//4, -7//4, -31//4], 3)
+3-element Vector{Rational{Int64}}:
+  -71//4
+ -127//4
+ -199//4
+```
+"""
+function lagrange(p::Vector{T1}, a::T2; S::Vector=Vector(), δ::Vector=Vector(), Δ::Vector=Vector())::Vector{T1} where {T1 <: Union{Integer, Rational}, T2 <: Integer}
+    d = length(p) - 1
+
+    if a == d+1
+        # use theorem 3.1 from https://dl.acm.org/doi/pdf/10.1145/120694.120697
+        G = zeros(T1, 2d + 4)
+
+        for i = 1:(d + 2)
+            G[i] = (2(i & 1) - 1) * binomial(big(d + 1), big(i - 1))
+            # G[i] = (-1)^(i-1) * binomial(d+1,i-1)
+        end
+
+        H = zeros(T1, 2d + 4)
+
+        for i = 1:(d + 3) #I think 1:d+1 works too but I'm a little nervous about changing it
+            H[d + 1 + i] = -(2(i & 1) - 1) * binomial(big(-d - 1), big(i - 1))
+        end
+
+        F1 = [0; MP([p; 0], G)[1:(end - 1)]]
+
+        return MP(F1, H)[2:end]
+    end
+
+    if (length(δ) == 0)
+        δ = compute_δ(d)
+    end
+
+    if (length(Δ) == 0)
+        Δ = compute_Δ(a, d)
+    end
+
+    p_tilde = p .* δ
+
+    if (length(S) == 0)
+        S = zeros(Rational{BigInt}, 2d + 1)
+
+        for i = 0:2d
+            S[i + 1] = 1 // (a + i - d)
+        end
+    end
+
+    #Q_k is the coefficient of x^{k + d} in ̃pS, and P(a + k) = Q_k Δ[i]. Importantly, we only need the middle product here.
+    prod = MP(p_tilde, S) .* Δ
+    
+    return prod
+end
 
 
 
@@ -153,14 +255,28 @@ function lagrange_matrix(matrices_to_interpolate::Array{T, 3}) where {T <: Union
     # I'd prefer to not initialize this to zeros but I'm not sure how else to do this
     # Todo: this should probably only be 3d + 1
     interpolated_matrices = zeros(T, MATRIX_DIMENSION, MATRIX_DIMENSION, 3(d + 1))
+    
+
+    # δ = compute_δ(d)
+    # Δ2 = compute_Δ(2d+2, d)
+    # Δ3 = compute_Δ(3d+3, d)
+
+    # S2 = zeros(Rational{BigInt}, 2d + 1)
+    # S3 = zeros(Rational{BigInt}, 2d + 1)
+    # for i = 0:2d
+    #     S2[i + 1] = 1 // (2d+2 + i - d)
+    #     S3[i + 1] = 1 // (3d+3 + i - d)
+    # end
 
     # the thing to do would be to compute \delta here and pass it in to each call
     for i in 1:MATRIX_DIMENSION
         for j in 1:MATRIX_DIMENSION
-            v1 = lagrange([matrices_to_interpolate[i, j, k] for k in 1:d+1])
-            v2 = lagrange(v1)
-            v3 = lagrange(v2)
-         
+            v1 = lagrange([matrices_to_interpolate[i, j, k] for k in 1:d+1], d+1)
+            # v2 = lagrange(v1, d+1)
+            # v3 = lagrange(v2, d+1)
+            v2 = lagrange([matrices_to_interpolate[i, j, k] for k in 1:d+1], 2d+2; S = S2, δ, Δ = Δ2)
+            v3 = lagrange([matrices_to_interpolate[i, j, k] for k in 1:d+1], 3d+3; S = S3, δ, Δ = Δ3)
+
             for k in 1:d+1
                 interpolated_matrices[i, j, k] = v1[k]
                 interpolated_matrices[i, j, k + d + 1] = v2[k]

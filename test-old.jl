@@ -1,18 +1,22 @@
 include("src/functions.jl")
 
-# test_MP = true 
-# test_δ = true
-# test_Δ = true
-# test_lagrange = true
-test_matrix_product = true
-test_matrix_product_slow = true
 
 test_MP = false 
 test_δ = false
 test_Δ = false
 test_lagrange = false
-# test_matrix_product = true
-# test_matrix_product_slow = false
+test_matrix_product = false
+test_matrix_product_slow = false
+
+
+# test_MP = true 
+# test_δ = true
+# test_Δ = true
+# test_lagrange = true
+test_matrix_product = true
+# test_matrix_product_slow = true
+
+
 
 
 if test_MP
