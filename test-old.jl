@@ -14,7 +14,7 @@ test_matrix_product_slow = false
 # test_Δ = true
 # test_lagrange = true
 test_matrix_product = true
-test_matrix_product_slow = true
+# test_matrix_product_slow = true
 
 
 
