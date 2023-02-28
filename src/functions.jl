@@ -1,5 +1,7 @@
 debug = false
 
+include("types.jl")
+
 @doc raw"""
     MP(y, z)
 
@@ -26,7 +28,7 @@ julia> Main.OurModuleName.MP([-7//10, 1, -2], [9//4, -1//4, -2//5, 9//8, -4//9, 
   161//72
 ```
 """
-function MP(y::Array{<: Union{Integer, Rational}}, z::Array{<: Union{Integer, Rational}})
+function MP(y::Array{<: Union{Integer, Rational, IntModQ}}, z::Array{<: Union{Integer, Rational, IntModQ}})
     # corollary 2 from https://hal.inria.fr/inria-00071921/document
     n = length(y)
     
@@ -70,13 +72,15 @@ julia> Main.OurModuleName.lagrange([1, -7, -31])
  -199
 ```
 """
-function lagrange(p::Vector{T1})::Vector{T1} where {T1 <: Union{Integer, Rational}}
+function lagrange(p::Vector{T1})::Vector{T1} where {T1 <: Union{Integer, Rational, IntModQ}}
     d = length(p) - 1
     # a = d + 1
 
     # use theorem 3.1 from https://dl.acm.org/doi/pdf/10.1145/120694.120697
+    #Todo: cache G and H!!!
     G = zeros(T1, 2d + 4)
 
+    #Todo: add an interface to binomial for IntModQ
     for i = 1:(d + 2)
         G[i] = (2(i & 1) - 1) * binomial(big(d + 1), big(i - 1))
         # G[i] = (-1)^(i-1) * binomial(d+1,i-1)
