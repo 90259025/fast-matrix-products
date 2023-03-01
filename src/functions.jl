@@ -52,7 +52,13 @@ function MP(y::Array{<: Union{Integer, Rational, IntModQ}}, z::Array{<: Union{In
     return [α[1:n₁] .- β[1:n₁]; γ[1:n₀] .+ β[1:n₀]]
 end
 
-
+# performs the same computation as lagrange, but assumes G and H are precomputed
+function lagrange_precomputed(p::Vector{T1},G::Vector{T1},H::Vector{T1})::Vector{T1} where {T1 <: Union{Integer, Rational, IntModQ}}
+    
+    # use theorem 3.1 from https://dl.acm.org/doi/pdf/10.1145/120694.120697
+    F1 = [0; MP([p; 0], G)[1:(end - 1)]]
+    return MP(F1, H)[2:end]
+end
 
 @doc raw"""
     lagrange(p)
@@ -92,10 +98,9 @@ function lagrange(p::Vector{T1})::Vector{T1} where {T1 <: Union{Integer, Rationa
         H[d + 1 + i] = -(2(i & 1) - 1) * binomial(big(-d - 1), big(i - 1))
     end
 
-    F1 = [0; MP([p; 0], G)[1:(end - 1)]]
-
-    return MP(F1, H)[2:end]
+    return lagrange_precomputed(p,G,H)
 end
+
 
 
 
@@ -150,7 +155,7 @@ julia> Main.OurModuleName.lagrange_matrix([0:2 3:5 6:8 ;;; 9:11 12:14 15:17])
  65  68  71
 ```
 """
-function lagrange_matrix(matrices_to_interpolate::Array{T, 3}) where {T <: Union{Integer, Rational}}
+function lagrange_matrix(matrices_to_interpolate::Array{T1, 3}) where {T1 <: Union{Integer, Rational}}
     d = size(matrices_to_interpolate, 3) - 1
     
     MATRIX_DIMENSION = size(matrices_to_interpolate, 1)
@@ -158,14 +163,29 @@ function lagrange_matrix(matrices_to_interpolate::Array{T, 3}) where {T <: Union
     # ith entry is a (matdim) by (matdim) matrix
     # I'd prefer to not initialize this to zeros but I'm not sure how else to do this
     # Todo: this should probably only be 3d + 1
-    interpolated_matrices = zeros(T, MATRIX_DIMENSION, MATRIX_DIMENSION, 3(d + 1))
+    interpolated_matrices = zeros(T1, MATRIX_DIMENSION, MATRIX_DIMENSION, 3(d + 1))
 
-    # the thing to do would be to compute \delta here and pass it in to each call
+    
+    # todo: make computing G and H its own function
+    G = zeros(T1, 2d + 4)
+
+    #Todo: add an interface to binomial for IntModQ
+    for i = 1:(d + 2)
+        G[i] = (2(i & 1) - 1) * binomial(big(d + 1), big(i - 1))
+        # G[i] = (-1)^(i-1) * binomial(d+1,i-1)
+    end
+
+    H = zeros(T1, 2d + 4)
+
+    for i = 1:(d + 3) #I think 1:d+1 works too but I'm a little nervous about changing it
+        H[d + 1 + i] = -(2(i & 1) - 1) * binomial(big(-d - 1), big(i - 1))
+    end
+
     for i in 1:MATRIX_DIMENSION
         for j in 1:MATRIX_DIMENSION
-            v1 = lagrange([matrices_to_interpolate[i, j, k] for k in 1:d+1])
-            v2 = lagrange(v1)
-            v3 = lagrange(v2)
+            v1 = lagrange_precomputed([matrices_to_interpolate[i, j, k] for k in 1:d+1],G,H)
+            v2 = lagrange_precomputed(v1,G,H)
+            v3 = lagrange_precomputed(v2,G,H)
          
             for k in 1:d+1
                 interpolated_matrices[i, j, k] = v1[k]
@@ -249,10 +269,3 @@ function matrix_product_step(smat::Array{T, 3}, d::S, j::R) where {T <: Union{In
     return smat
 end
 
-# println(mod.(matrix_product(BigInt.([9 9 -4; 6 1 1; 2 2 -8 ;;; 0 4 -20; -6 13 6; -1 -12 9 ;;; -25 3 -48; -22 43 11; 10 -40 42 ]), 2),2053)  == BigInt.([2003 201 1891; 2046 25 1948; 2049 130 1953]))
-
-# println(matrix_product(BigInt.([-7 -8 -7; 0 6 3; -8 -6 -1 ;;; -13 -9 -16; -3 7 19; -6 -10 7 ;;; -27 -10 -23; 4 16 53; -12 -4 15 ]), 2)  == BigInt.([157 77 -89; -36 12 135; 128 40 7]))
-# println(matrix_product(BigInt.([1 -3 0; 1 -1 8; -1 -2 4 ;;; 3 -12 9; 8 1 10; -4 -6 -7 ;;; 9 -31 24; 27 -3 14; -17 -22 -38 ]), 16)  == BigInt.([26232097201847637501656274121044930537 -252761813710026155381080448027519775048 -252158182194751717460963166378577530153; 87931715687714391870923057642403710511 -991443661719657974170019250074987959386 -1066541778933255595259716322568147718527; 49033727672125983633121590997052304384 -1118752398295368069898807765066599654123 -1223672762795933290451505791107355310744]))
-# println(matrix_product(BigInt.([1 -3 0; 1 -1 8; -1 -2 4 ;;; 3 -12 9; 8 1 10; -4 -6 -7 ;;; 9 -31 24; 27 -3 14; -17 -22 -38 ]), 16))
-
-# println(mod.(matrix_product(BigInt.([4 4 -5 4 1; -9 -10 9 -2 0; -3 -4 -5 5 -3; -9 4 -7 4 -1; -9 -8 0 -9 1 ;;; 3 13 1 1 -8; -8 0 13 -4 7; -22 -1 -17 5 7; -16 18 -22 1 -10; 0 -14 -13 -9 2 ;;; -18 124 31 -156 15; -11 140 39 26 106; -93 126 5 -81 127; -73 150 -79 34 -71; 97 -122 -118 33 -141 ;;; -185 541 103 -833 232; -78 734 99 136 519; -240 635 157 -433 591; -366 676 -238 235 -220; 438 -560 -531 171 -764 ;;; -720 1588 235 -2612 949; -341 2322 205 398 1612; -463 1928 583 -1327 1753; -1225 2064 -583 856 -493; 1251 -1700 -1612 483 -2395 ]), 256),2053)  == BigInt.([30 1832 46 1524 704; 1950 975 1437 1939 1120; 1116 1999 1033 811 773; 1635 1107 642 63 685; 961 525 1309 1212 2006]))
