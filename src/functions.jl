@@ -169,20 +169,9 @@ function lagrange_matrix(matrices_to_interpolate::Array{T1, 3}) where {T1 <: Uni
     interpolated_matrices = zeros(T1, MATRIX_DIMENSION, MATRIX_DIMENSION, 3(d + 1))
 
     
-    # todo: make computing G and H its own function
-    G = zeros(T1, 2d + 4)
+    G = T1[i < d+3 ? (2(i & 1) - 1) * binomial(big(d + 1), big(i - 1)) : 0 for i = 1:(2d+4)]
+    H = T1[i > d+1 ? -(2((i-d-1) & 1) - 1) * binomial(big(-d - 1), big(i-d-1 - 1)) : 0 for i = 1:(2d+4)]
 
-    #Todo: add an interface to binomial for IntModQ
-    for i = 1:(d + 2)
-        G[i] = (2(i & 1) - 1) * binomial(big(d + 1), big(i - 1))
-        # G[i] = (-1)^(i-1) * binomial(d+1,i-1)
-    end
-
-    H = zeros(T1, 2d + 4)
-
-    for i = 1:(d + 3) #I think 1:d+1 works too but I'm a little nervous about changing it
-        H[d + 1 + i] = -(2(i & 1) - 1) * binomial(big(-d - 1), big(i - 1))
-    end
 
     for i in 1:MATRIX_DIMENSION
         for j in 1:MATRIX_DIMENSION
