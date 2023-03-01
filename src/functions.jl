@@ -82,21 +82,24 @@ function lagrange(p::Vector{T1})::Vector{T1} where {T1 <: Union{Integer, Rationa
     d = length(p) - 1
     # a = d + 1
 
-    # use theorem 3.1 from https://dl.acm.org/doi/pdf/10.1145/120694.120697
-    #Todo: cache G and H!!!
-    G = zeros(T1, 2d + 4)
+    G = T1[i < d+3 ? (2(i & 1) - 1) * binomial(big(d + 1), big(i - 1)) : 0 for i = 1:(2d+4)]
+    H = T1[i > d+1 ? -(2((i-d-1) & 1) - 1) * binomial(big(-d - 1), big(i-d-1 - 1)) : 0 for i = 1:(2d+4)]
 
-    #Todo: add an interface to binomial for IntModQ
-    for i = 1:(d + 2)
-        G[i] = (2(i & 1) - 1) * binomial(big(d + 1), big(i - 1))
-        # G[i] = (-1)^(i-1) * binomial(d+1,i-1)
-    end
 
-    H = zeros(T1, 2d + 4)
+    # G = zeros(T1, 2d + 4)
 
-    for i = 1:(d + 3) #I think 1:d+1 works too but I'm a little nervous about changing it
-        H[d + 1 + i] = -(2(i & 1) - 1) * binomial(big(-d - 1), big(i - 1))
-    end
+    # #Todo: add an interface to binomial for IntModQ
+    # for i = 1:(d + 2)
+    #     G[i] = (2(i & 1) - 1) * binomial(big(d + 1), big(i - 1))
+    #     # G[i] = (-1)^(i-1) * binomial(d+1,i-1)
+    # end
+
+    # H = zeros(T1, 2d + 4)
+
+    # for i = 1:(d + 3) #I think 1:d+1 works too but I'm a little nervous about changing it
+    #     H[d + 1 + i] = -(2(i & 1) - 1) * binomial(big(-d - 1), big(i - 1))
+    # end
+    # print(H)
 
     return lagrange_precomputed(p,G,H)
 end
