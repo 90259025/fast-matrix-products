@@ -1,6 +1,7 @@
 debug = false
 
 include("types.jl")
+using DSP
 
 @doc raw"""
     MP(y, z)
@@ -35,6 +36,12 @@ function MP(y::Array{<: Union{Integer, Rational, IntModQ}}, z::Array{<: Union{In
     if n == 1
         return [y[1] * z[1]]
     end
+
+    # this is a work in progress
+    # if n > 2000
+    if typeof(y[1]) == IntModQ
+        return IntModQ.(DSP.conv([aaa.n for aaa in y],[aaa.n for aaa in z])[length(y):2*length(y)-1])
+    end
     
     n₀ = n >> 1
     n₁ = (n + 1) >> 1
@@ -48,14 +55,12 @@ function MP(y::Array{<: Union{Integer, Rational, IntModQ}}, z::Array{<: Union{In
     end
     
     γ = MP(y[1:n₀], z[(n₁ + 1):(n₁ + 2n₀ - 1)] .+ z[(2n₁ + 1):(2n - 1)])
-    
     return [α[1:n₁] .- β[1:n₁]; γ[1:n₀] .+ β[1:n₀]]
 end
 
 # performs the same computation as lagrange, but assumes G and H are precomputed
+# use theorem 3.1 from https://dl.acm.org/doi/pdf/10.1145/120694.120697
 function lagrange_precomputed(p::Vector{T1},G::Vector{T1},H::Vector{T1})::Vector{T1} where {T1 <: Union{Integer, Rational, IntModQ}}
-    
-    # use theorem 3.1 from https://dl.acm.org/doi/pdf/10.1145/120694.120697
     F1 = [0; MP([p; 0], G)[1:(end - 1)]]
     return MP(F1, H)[2:end]
 end
@@ -80,27 +85,8 @@ julia> Main.OurModuleName.lagrange([1, -7, -31])
 """
 function lagrange(p::Vector{T1})::Vector{T1} where {T1 <: Union{Integer, Rational, IntModQ}}
     d = length(p) - 1
-    # a = d + 1
-
     G = T1[i < d+3 ? (2(i & 1) - 1) * binomial(big(d + 1), big(i - 1)) : 0 for i = 1:(2d+4)]
     H = T1[i > d+1 ? -(2((i-d-1) & 1) - 1) * binomial(big(-d - 1), big(i-d-1 - 1)) : 0 for i = 1:(2d+4)]
-
-
-    # G = zeros(T1, 2d + 4)
-
-    # #Todo: add an interface to binomial for IntModQ
-    # for i = 1:(d + 2)
-    #     G[i] = (2(i & 1) - 1) * binomial(big(d + 1), big(i - 1))
-    #     # G[i] = (-1)^(i-1) * binomial(d+1,i-1)
-    # end
-
-    # H = zeros(T1, 2d + 4)
-
-    # for i = 1:(d + 3) #I think 1:d+1 works too but I'm a little nervous about changing it
-    #     H[d + 1 + i] = -(2(i & 1) - 1) * binomial(big(-d - 1), big(i - 1))
-    # end
-    # print(H)
-
     return lagrange_precomputed(p,G,H)
 end
 
@@ -248,9 +234,6 @@ end
 
 function matrix_product_step(smat::Array{T, 3}, d::S, j::R) where {T <: Union{Integer, Rational}, S <: Integer, R <: Integer}
     smat = [smat ;;; lagrange_matrix(smat)]
-
-    # println("before slicing: ", smat)
-
     # I'm sure this can be cleaned up
     for i in 1:(2^(j+1))*(d) + 1
         smat[:, :, i] = smat[:, :, 2i - 1] * smat[:, :, 2i]
