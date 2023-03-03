@@ -35,6 +35,11 @@ function MP(y::Array{<: Union{Integer, Rational, IntModQ}}, z::Array{<: Union{In
     
     if n == 1
         return [y[1] * z[1]]
+    elseif n == 2
+        α = (z[1] + z[2]) * y[2]
+        β = (y[1] - y[2]) * z[2]
+        γ = (z[2] + z[3]) * y[1]
+        return [α + β, γ - β]
     end
 
     # this is a work in progress
