@@ -118,7 +118,7 @@ if test_matrix_product_mod_q
     
 end
 
-if test_matrix_product_really_slow
+if test_matrix_product_mod_q_really_slow
     include("../test/stress_test/really_big_matrix_product_mod_.jl")
 end
 
