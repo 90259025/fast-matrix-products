@@ -38,11 +38,11 @@ function MP(y::Array{<: Union{Integer, Rational, IntModQ}}, z::Array{<: Union{In
     end
 
     # this is a work in progress
-    if n > 12
+    # if n > 12
         if typeof(y[1]) == IntModQ
-            return IntModQ.(DSP.conv([aaa.n for aaa in y],[aaa.n for aaa in z])[length(y):2*length(y)-1])
+            return IntModQ.(DSP.conv(convert.(Int,y),convert.(Int,z))[n:2*n-1])
         end
-    end
+    # end
     
     n₀ = n >> 1
     n₁ = (n + 1) >> 1
