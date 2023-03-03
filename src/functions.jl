@@ -37,25 +37,31 @@ function MP(y::Array{<: Union{Integer, Rational, IntModQ}}, z::Array{<: Union{In
         return [y[1] * z[1]]
     end
 
+    two_n_minus_1 = (n << 1)-1
     # this is a work in progress
     if n > 12
         if typeof(y[1]) == IntModQ
-            return IntModQ.(DSP.conv(convert.(Int,y),convert.(Int,z))[n:2*n-1])
+            return IntModQ.(DSP.conv(convert.(Int,y),convert.(Int,z))[n:two_n_minus_1])
         end
     end
     
     n₀ = n >> 1
     n₁ = (n + 1) >> 1
-    
-    α = MP(y[(n₀ + 1):end], z[1:(2n₁ - 1)] .+ z[(n₁ + 1):(3n₁ - 1)])
+    n₀_plus_1 = n₀ + 1
+    n₁_plus_1 = n₁ + 1
+    two_n₀ = n₀ << 1
+    two_n₁ = n₁ << 1
+    three_n₁_minus_1 = two_n₁+n₁ - 1
+
+    α = MP(y[n₀_plus_1:end], z[1:(two_n₁ - 1)] .+ z[n₁_plus_1:three_n₁_minus_1])
     
     if iseven(n)
-        β = MP(y[(n₁ + 1):n] .- y[1:n₀], z[(n₁ + 1):(3n₁ - 1)])
+        β = MP(y[n₁_plus_1:n] .- y[1:n₀], z[n₁_plus_1:three_n₁_minus_1])
     else
-        β = MP([y[n₀ + 1]; y[(n₁ + 1):n] .- y[1:n₀]],z[(n₁ + 1):(3n₁ - 1)])
+        β = MP([y[n₀_plus_1]; y[n₁_plus_1:n] .- y[1:n₀]],z[n₁_plus_1:three_n₁_minus_1])
     end
     
-    γ = MP(y[1:n₀], z[(n₁ + 1):(n₁ + 2n₀ - 1)] .+ z[(2n₁ + 1):(2n - 1)])
+    γ = MP(y[1:n₀], z[n₁_plus_1:(n₁ + two_n₀ - 1)] .+ z[(two_n₁ + 1):two_n_minus_1])
     return [α[1:n₁] .- β[1:n₁]; γ[1:n₀] .+ β[1:n₀]]
 end
 
@@ -71,9 +77,9 @@ end
 
 Lagrange interpolate a vector $p$ of polynomial outputs to a new position $degree+1$.
 
-For a polynomial $P$, apply Lagrange interpolation to the values
-$p = [P(0), P(1), ..., P(d)]$ to produce a vector of
-shifted values $[P(d+1), P(d + 2), ..., P(2d + 1)]$.
+For a polynomial $P$ of degree at most d, apply Lagrange 
+interpolation to the values $p = [P(0), P(1), ..., P(d)]$ 
+to produce a vector of shifted values $[P(d+1), P(d + 2), ..., P(2d + 1)]$.
 
 # Example
 ```jldoctest
