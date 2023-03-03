@@ -1,4 +1,4 @@
-import Base: +, -, *, ^, zero, convert, promote_rule
+import Base: +, -, *, ^, zero, convert, promote_rule, binomial
 
 characteristic_q = 3
 
@@ -20,4 +20,10 @@ end
 zero(::Type{IntModQ}) = IntModQ(0)
 
 convert(::Type{IntModQ}, x::T) where {T <: Integer} = IntModQ(x)
+convert(::Type{T}, x::IntModQ) where {T <: Integer} = T(x.n)
 promote_rule(::Type{IntModQ}, ::Type{<: Integer}) = IntModQ
+
+# function binomial(n::IntModQ, k::IntModQ)::IntModQ
+#     #Todo: improve this mod p
+#     return binomial(convert(Int, n), convert(Int, k))
+# end

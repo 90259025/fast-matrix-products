@@ -38,9 +38,10 @@ function MP(y::Array{<: Union{Integer, Rational, IntModQ}}, z::Array{<: Union{In
     end
 
     # this is a work in progress
-    # if n > 2000
-    if typeof(y[1]) == IntModQ
-        return IntModQ.(DSP.conv([aaa.n for aaa in y],[aaa.n for aaa in z])[length(y):2*length(y)-1])
+    if n > 12
+        if typeof(y[1]) == IntModQ
+            return IntModQ.(DSP.conv([aaa.n for aaa in y],[aaa.n for aaa in z])[length(y):2*length(y)-1])
+        end
     end
     
     n₀ = n >> 1
@@ -144,7 +145,7 @@ julia> Main.OurModuleName.lagrange_matrix([0:2 3:5 6:8 ;;; 9:11 12:14 15:17])
  65  68  71
 ```
 """
-function lagrange_matrix(matrices_to_interpolate::Array{T1, 3}) where {T1 <: Union{Integer, Rational}}
+function lagrange_matrix(matrices_to_interpolate::Array{T1, 3}) where {T1 <: Union{Integer, Rational, IntModQ}}
     d = size(matrices_to_interpolate, 3) - 1
     
     MATRIX_DIMENSION = size(matrices_to_interpolate, 1)
@@ -162,8 +163,8 @@ function lagrange_matrix(matrices_to_interpolate::Array{T1, 3}) where {T1 <: Uni
     for i in 1:MATRIX_DIMENSION
         for j in 1:MATRIX_DIMENSION
             v1 = lagrange_precomputed([matrices_to_interpolate[i, j, k] for k in 1:d+1],G,H)
-            v2 = lagrange_precomputed(v1,G,H)
-            v3 = lagrange_precomputed(v2,G,H)
+            v2 = lagrange_precomputed(v1, G, H)
+            v3 = lagrange_precomputed(v2, G, H)
          
             for k in 1:d+1
                 interpolated_matrices[i, j, k] = v1[k]
@@ -195,7 +196,7 @@ julia> Main.OurModuleName.matrix_product(BigInt.([0:2 3:5 6:8 ;;; 9:11 12:14 15:
  1125522  1245726  1365930
 ```
 """
-function matrix_product(starter_matrices::Array{T, 3}, a::S) where {T <: Union{Integer, Rational}, S <: Integer}
+function matrix_product(starter_matrices::Array{T, 3}, a::S)::Array{T, 2} where {T <: Union{Integer, Rational, IntModQ}, S <: Integer}
     # currently assumes a is a power of 2 which is greater than d
     d = size(starter_matrices, 3) - 1
 
@@ -232,7 +233,7 @@ end
 
 
 
-function matrix_product_step(smat::Array{T, 3}, d::S, j::R) where {T <: Union{Integer, Rational}, S <: Integer, R <: Integer}
+function matrix_product_step(smat::Array{T, 3}, d::S, j::R)::Array{T, 3} where {T <: Union{Integer, Rational, IntModQ}, S <: Integer, R <: Integer}
     smat = [smat ;;; lagrange_matrix(smat)]
     # I'm sure this can be cleaned up
     for i in 1:(2^(j+1))*(d) + 1
