@@ -5,13 +5,15 @@ test_MP = false
 test_lagrange = false
 test_matrix_product = false
 test_matrix_product_slow = false
+test_matrix_product_mod_q = false
 test_matrix_product_really_slow = false
 
 # test_MP = true 
 # test_lagrange = true
 # test_matrix_product = true
 # test_matrix_product_slow = true
-test_matrix_product_really_slow = true
+test_matrix_product_mod_q = true
+# test_matrix_product_really_slow = true
 
 
 
@@ -87,9 +89,7 @@ if test_matrix_product
 
     println(mod.(matrix_product(BigInt.([4 4 -5 4 1; -9 -10 9 -2 0; -3 -4 -5 5 -3; -9 4 -7 4 -1; -9 -8 0 -9 1 ;;; 3 13 1 1 -8; -8 0 13 -4 7; -22 -1 -17 5 7; -16 18 -22 1 -10; 0 -14 -13 -9 2 ;;; -18 124 31 -156 15; -11 140 39 26 106; -93 126 5 -81 127; -73 150 -79 34 -71; 97 -122 -118 33 -141 ;;; -185 541 103 -833 232; -78 734 99 136 519; -240 635 157 -433 591; -366 676 -238 235 -220; 438 -560 -531 171 -764 ;;; -720 1588 235 -2612 949; -341 2322 205 398 1612; -463 1928 583 -1327 1753; -1225 2064 -583 856 -493; 1251 -1700 -1612 483 -2395 ]), 256),2053)  == BigInt.([30 1832 46 1524 704; 1950 975 1437 1939 1120; 1116 1999 1033 811 773; 1635 1107 642 63 685; 961 525 1309 1212 2006]))
 
-    println("Testing mod q")
-    characteristic_q = 389
-    println(matrix_product(IntModQ.([9 9 -4; 6 1 1; 2 2 -8 ;;; 0 4 -20; -6 13 6; -1 -12 9 ;;; -25 3 -48; -22 43 11; 10 -40 42 ]), 2)  == IntModQ.(matrix_product([9 9 -4; 6 1 1; 2 2 -8 ;;; 0 4 -20; -6 13 6; -1 -12 9 ;;; -25 3 -48; -22 43 11; 10 -40 42 ], 2)))
+    
 end
 
 if test_matrix_product_slow
@@ -99,8 +99,17 @@ if test_matrix_product_slow
     characteristic_q = 2053
     print("linear, 5 by 5, prduct length 2^21: ")
     @time println(matrix_product(IntModQ.([7 -6 9 7 -10; -4 -4 7 -10 6; -10 1 -9 3 7; -3 -3 -3 2 -8; 7 -2 -4 -3 4 ;;; 11 -5 13 -2 -8; -5 -1 8 -13 11; -11 4 0 10 8; -13 6 -2 9 -15; -2 -2 -14 4 0 ]), 2097152)  == IntModQ.([1612 406 442 54 1983; 1440 1618 1502 731 1199; 218 1429 1137 983 973; 991 550 228 922 79; 1186 327 1014 200 2]))
+end
+
+if test_matrix_product_mod_q
     println("Testing mod q")
-    @time println(matrix_product(IntModQ.([7 -6 9 7 -10; -4 -4 7 -10 6; -10 1 -9 3 7; -3 -3 -3 2 -8; 7 -2 -4 -3 4 ;;; 11 -5 13 -2 -8; -5 -1 8 -13 11; -11 4 0 10 8; -13 6 -2 9 -15; -2 -2 -14 4 0 ]), 2097152) == IntModQ.([1612 406 442 54 1983; 1440 1618 1502 731 1199; 218 1429 1137 983 973; 991 550 228 922 79; 1186 327 1014 200 2]))
+    characteristic_q = 2053
+    # this one needs q = 389
+    # println(matrix_product(IntModQ.([9 9 -4; 6 1 1; 2 2 -8 ;;; 0 4 -20; -6 13 6; -1 -12 9 ;;; -25 3 -48; -22 43 11; 10 -40 42 ]), 2)  == IntModQ.(matrix_product([9 9 -4; 6 1 1; 2 2 -8 ;;; 0 4 -20; -6 13 6; -1 -12 9 ;;; -25 3 -48; -22 43 11; 10 -40 42 ], 2)))
+
+    println(matrix_product(IntModQ.([-6 -10 -7 0 -7; -4 -2 -9 2 -5; 1 8 7 6 6; -3 6 -7 -2 -2; 2 1 -7 -7 7 ;;; -15 -17 -4 -10 2; 0 -3 -16 3 -6; 7 -1 8 10 6; 5 -3 -17 -6 6; 2 -5 -17 -14 12 ]), 16)  == IntModQ.([639 371 881 237 1756; 218 248 705 1397 272; 702 207 1112 1129 1246; 132 1548 164 48 1383; 1974 843 690 1231 793]))
+    print("degree 4, 64 by 64, product length 2^12: ")
+    @time include("../test/stress_test/really_big_matrix_product_mod_.jl")
 end
 
 if test_matrix_product_really_slow

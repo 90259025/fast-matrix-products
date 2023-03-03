@@ -1,7 +1,7 @@
 import random
-mat_dim = 5
-function_degree = 1
-len_prod = 2^16
+mat_dim = 64
+function_degree = 4
+len_prod = 2^12
 
 # optional argument to reduce answer mod p
 # p = 0
@@ -25,9 +25,15 @@ for i in range(mat_dim):
         A_out[i][j] = f(x)
 A_in = [matrix(_) for _ in A_in]
 A_out = matrix(A_out)
-A_out = prod([A_out(i) for i in range(len_prod)])
+
 if p > 0:
-    A_out = A_out % p
+    A_out_step = A_out(0) % p
+    for i in range(1,len_prod):
+        A_out_step = (A_out_step*A_out(i))%p
+        
+    A_out = A_out_step % p
+else:
+    A_out = prod([A_out(i) for i in range(len_prod)])
 
 printstr =""
 s = "["
@@ -46,7 +52,7 @@ for ind in range((function_degree+1)):
 s += "]"
 s = s.replace("], ]","]]")
 if p > 0:
-    printstr += "println(mod.(matrix_product(" + s + " " + ") == "
+    printstr += "println(matrix_product(" + s + " " + ") == "
 else:
     printstr += "println(matrix_product(" + s + " " + ") == "
 
@@ -68,10 +74,10 @@ s = s.replace("], ]","]")
 printstr += s+")"
 printstr = printstr.replace('[[','[').replace(']])','])').replace('], [',' ;;; ').replace(']]','').replace('],','').replace(' ;;; ]',']')
 
-if p > 0:
-    printstr = printstr.replace(') == ', "]), " + str(len_prod) + '),' + str(p) + ') == ')
-else:
-    printstr = printstr.replace(') == ', "]), " + str(len_prod) + ') == ')
+# if p > 0:
+#     printstr = printstr.replace(') == ', "]), " + str(len_prod) + '),' + str(p) + ') == ')
+# else:
+printstr = printstr.replace(') == ', "]), " + str(len_prod) + ') == ')
 
 if not USE_BIG_INT:
     print(printstr)
@@ -80,8 +86,11 @@ else:
 # optional BigInt conversion
 
 # if you're doing this in a sage notebook this will probably crash for large matrices
-
-    printstr = printstr.replace('([','(BigInt.([').replace('== [',' == BigInt.([')
+    
+    if p > 0:
+        printstr = printstr.replace('([','(IntModQ.([').replace('== [',' == IntModQ.([')
+    else:
+        printstr = printstr.replace('([','(BigInt.([').replace('== [',' == BigInt.([')
     printstr += ')'
     print(printstr)
 

@@ -244,4 +244,3 @@ function matrix_product_step(smat::Array{T, 3}, d::S, j::R)::Array{T, 3} where {
 
     return smat
 end
-
