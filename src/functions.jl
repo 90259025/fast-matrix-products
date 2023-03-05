@@ -33,6 +33,8 @@ function MP(y::Array{<: Union{Integer, Rational, IntModQ}}, z::Array{<: Union{In
     # corollary 2 from https://hal.inria.fr/inria-00071921/document
     n = length(y)
     
+
+
     if n == 1
         return [y[1] * z[1]]
     elseif n == 2
@@ -41,6 +43,7 @@ function MP(y::Array{<: Union{Integer, Rational, IntModQ}}, z::Array{<: Union{In
         γ = (z[2] + z[3]) * y[1]
         return [α + β, γ - β]
     end
+
 
     # this is a work in progress
     if n > 12
@@ -64,9 +67,14 @@ function MP(y::Array{<: Union{Integer, Rational, IntModQ}}, z::Array{<: Union{In
     return [α[1:n₁] .- β[1:n₁]; γ[1:n₀] .+ β[1:n₀]]
 end
 
+
+
 # performs the same computation as lagrange, but assumes G and H are precomputed
 # use theorem 3.1 from https://dl.acm.org/doi/pdf/10.1145/120694.120697
 function lagrange_precomputed(p::Vector{T1},G::Vector{T1},H::Vector{T1})::Vector{T1} where {T1 <: Union{Integer, Rational, IntModQ}}
+    
+    # TODO: the first half of the entries of G are zero... maybe make use of that?
+    # also, we need straight up polynomial multiplication implemented
     F1 = [0; MP([p; 0], G)[1:(end - 1)]]
     return MP(F1, H)[2:end]
 end
