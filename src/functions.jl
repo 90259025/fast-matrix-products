@@ -78,20 +78,20 @@ function lagrange_precomputed(p::Vector{T1},G::Vector{T1},H::Vector{T1})::Vector
     n = length(p)
     
     
-    if typeof(p[1]) == IntModQ && n > 4
-        d = n-1
-        Gprime = G[1:d+2]
-        Hprime = H[d+2:end]
-        # Gprime =  T1[ (2(i & 1) - 1) * binomial(big(d + 1), big(i - 1)) for i = 1:d+2]
-        # Hprime = T1[-(2((i-d-1) & 1) - 1) * binomial(big(-d - 1), big(i-d-1 - 1)) for i = d+2:(2d+4)]
+    # if typeof(p[1]) == IntModQ && n > 4
+    #     d = n-1
+    #     Gprime = G[1:d+2]
+    #     Hprime = H[d+2:end]
+    #     # Gprime =  T1[ (2(i & 1) - 1) * binomial(big(d + 1), big(i - 1)) for i = 1:d+2]
+    #     # Hprime = T1[-(2((i-d-1) & 1) - 1) * binomial(big(-d - 1), big(i-d-1 - 1)) for i = d+2:(2d+4)]
 
-        temp = DSP.conv(convert.(Int,Gprime),convert.(Int,p))[n:2*n]
-        temp = convert.(Int,IntModQ.(temp))
-        temp[1] = 0
+    #     temp = DSP.conv(convert.(Int,Gprime),convert.(Int,p))[n:2*n]
+    #     temp = convert.(Int,IntModQ.(temp))
+    #     temp[1] = 0
 
-        temp = IntModQ.(DSP.conv(convert.(Int,Hprime),temp))[2:n+1]
-        return temp
-    end
+    #     temp = IntModQ.(DSP.conv(convert.(Int,Hprime),temp))[2:n+1]
+    #     return temp
+    # end
 
     F1 = [0; MP([p; 0], G)[1:(end - 1)]]
     return MP(F1, H)[2:end]
