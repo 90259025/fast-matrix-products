@@ -176,15 +176,15 @@ julia> Main.OurModuleName.lagrange_matrix([0:2 3:5 6:8 ;;; 9:11 12:14 15:17])
  65  68  71
 ```
 """
-function lagrange_matrix(matrices_to_interpolate::Array{T1, 3}) where {T1 <: Union{Integer, Rational, IntModQ}}
-    d = size(matrices_to_interpolate, 3) - 1
+function lagrange_matrix(matrices_to_interpolate::Vector{Array{T1, 2}}) where {T1 <: Union{Integer, Rational, IntModQ}}
+    d = length(matrices_to_interpolate) - 1
     
-    MATRIX_DIMENSION = size(matrices_to_interpolate, 1)
+    MATRIX_DIMENSION = size(matrices_to_interpolate[1], 1)
 
     # ith entry is a (matdim) by (matdim) matrix
     # I'd prefer to not initialize this to zeros but I'm not sure how else to do this
     # Todo: this should probably only be 3d + 1
-    interpolated_matrices = zeros(T1, MATRIX_DIMENSION, MATRIX_DIMENSION, 3(d + 1))
+    interpolated_matrices = [zeros(T1, MATRIX_DIMENSION, MATRIX_DIMENSION) for i = 1:3(d + 1)]
 
     
     G = T1[i < d+3 ? (2(i & 1) - 1) * binomial(big(d + 1), big(i - 1)) : 0 for i = 1:(2d+4)]
@@ -193,14 +193,14 @@ function lagrange_matrix(matrices_to_interpolate::Array{T1, 3}) where {T1 <: Uni
 
     for i in 1:MATRIX_DIMENSION
         for j in 1:MATRIX_DIMENSION
-            v1 = lagrange_precomputed([matrices_to_interpolate[i, j, k] for k in 1:d+1],G,H)
+            v1 = lagrange_precomputed([matrices_to_interpolate[k][i, j] for k in 1:d+1],G,H)
             v2 = lagrange_precomputed(v1, G, H)
             v3 = lagrange_precomputed(v2, G, H)
          
             for k in 1:d+1
-                interpolated_matrices[i, j, k] = v1[k]
-                interpolated_matrices[i, j, k + d + 1] = v2[k]
-                interpolated_matrices[i, j, k + 2(d+1)] = v3[k]
+                interpolated_matrices[k][i, j] = v1[k]
+                interpolated_matrices[k + d + 1][i, j] = v2[k]
+                interpolated_matrices[k + 2(d+1)][i, j] = v3[k]
             end
         end
     end
@@ -227,9 +227,9 @@ julia> Main.OurModuleName.matrix_product(BigInt.([0:2 3:5 6:8 ;;; 9:11 12:14 15:
  1125522  1245726  1365930
 ```
 """
-function matrix_product(starter_matrices::Array{T, 3}, a::S)::Array{T, 2} where {T <: Union{Integer, Rational, IntModQ}, S <: Integer}
+function matrix_product(starter_matrices::Vector{Array{T, 2}}, a::S)::Array{T, 2} where {T <: Union{Integer, Rational, IntModQ}, S <: Integer}
     # currently assumes a is a power of 2 which is greater than d
-    d = size(starter_matrices, 3) - 1
+    d = length(starter_matrices) - 1
 
     smat = copy(starter_matrices)
     num_steps = ceil(Int, log2(sqrt(a)))
@@ -248,7 +248,7 @@ function matrix_product(starter_matrices::Array{T, 3}, a::S)::Array{T, 2} where 
 
 
     # then one big ol product
-    smat_prod = smat[:, :, 1]
+    smat_prod = smat[1]
 
     #Multiply matrices according to price is right rules
     product_size = floor(Int, a / (2^num_steps))
@@ -256,7 +256,7 @@ function matrix_product(starter_matrices::Array{T, 3}, a::S)::Array{T, 2} where 
     # println(product_size, smat)
 
     for j = 2:product_size
-        smat_prod = smat_prod * smat[:, :, j]
+        smat_prod *= smat[j]
     end
     
     return smat_prod
@@ -264,14 +264,16 @@ end
 
 
 
-function matrix_product_step(smat::Array{T, 3}, d::S, j::R)::Array{T, 3} where {T <: Union{Integer, Rational, IntModQ}, S <: Integer, R <: Integer}
-    smat = [smat ;;; lagrange_matrix(smat)]
+function matrix_product_step(smat::Vector{Array{T, 2}}, d::S, j::R)::Vector{Array{T, 2}} where {T <: Union{Integer, Rational, IntModQ}, S <: Integer, R <: Integer}
+    smat = [smat ; lagrange_matrix(smat)]
+    
     # I'm sure this can be cleaned up
-    for i in 1:(2^(j+1))*(d) + 1
-        smat[:, :, i] = smat[:, :, 2i - 1] * smat[:, :, 2i]
-    end
+    
+    upper_bound = (2^(j+1))*(d) + 1
 
-    smat = smat[:, :, 1:(2^(j+1))*(d) + 1]
+    #println("$upper_bound $(length(smat)) $(size(smat[1], 1))")
 
-    return smat
+    return_value = [smat[2i - 1] * smat[2i] for i = 1:upper_bound]
+
+    return return_value
 end
