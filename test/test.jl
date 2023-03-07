@@ -16,7 +16,7 @@ test_matrix_product_really_slow = false
 # test_matrix_product = true
 # test_matrix_product_slow = true
 test_matrix_product_mod_q = true
-# test_matrix_product_mod_q_really_slow = true
+test_matrix_product_mod_q_really_slow = true
 # test_matrix_product_really_slow = true
 
 
