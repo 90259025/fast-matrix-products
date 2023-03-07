@@ -1,7 +1,7 @@
-multithread=false
+# multithread=false
 debug = false
 
-# multithread = true
+multithread = true
 
 include("types.jl")
 using DSP
@@ -194,7 +194,7 @@ function lagrange_matrix(matrices_to_interpolate::Vector{Array{T1, 2}}) where {T
     H = T1[i > d+1 ? -(2((i-d-1) & 1) - 1) * binomial(big(-d - 1), big(i-d-1 - 1)) : 0 for i = 1:(2d+4)]
 
 
-    if multithread
+    if false#multithread
         Threads.@threads for thread_i = 0:MATRIX_DIMENSION*MATRIX_DIMENSION-1
             i = 1 + (thread_i ÷ MATRIX_DIMENSION)
             j = 1 + (thread_i - MATRIX_DIMENSION*(i-1))
@@ -282,5 +282,15 @@ function matrix_product_step(smat::Vector{Array{T, 2}}, d::S, j::R)::Vector{Arra
     
     smat = [smat ; lagrange_matrix(smat)]    
     upper_bound = (2^(j+1))*(d) + 1
+
+    if multithread
+        # quick and dirty way to initialize
+        ans = smat[1:upper_bound]
+        Threads.@threads for thread_i = 1:upper_bound
+            ans[thread_i] = smat[2thread_i - 1] * smat[2thread_i]
+        end
+        return ans
+    end
+
     return [smat[2i - 1] * smat[2i] for i = 1:upper_bound]
 end
