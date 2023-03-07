@@ -1,3 +1,4 @@
+multithread = true
 debug = false
 
 include("types.jl")
@@ -191,8 +192,11 @@ function lagrange_matrix(matrices_to_interpolate::Vector{Array{T1, 2}}) where {T
     H = T1[i > d+1 ? -(2((i-d-1) & 1) - 1) * binomial(big(-d - 1), big(i-d-1 - 1)) : 0 for i = 1:(2d+4)]
 
 
-    for i in 1:MATRIX_DIMENSION
-        for j in 1:MATRIX_DIMENSION
+    if multithread
+        Threads.@threads for thread_i = 0:MATRIX_DIMENSION*MATRIX_DIMENSION-1
+            i = 1 + (thread_i ÷ MATRIX_DIMENSION)
+            j = 1 + (thread_i - MATRIX_DIMENSION*(i-1))
+
             v1 = lagrange_precomputed([matrices_to_interpolate[k][i, j] for k in 1:d+1],G,H)
             v2 = lagrange_precomputed(v1, G, H)
             v3 = lagrange_precomputed(v2, G, H)
@@ -201,6 +205,20 @@ function lagrange_matrix(matrices_to_interpolate::Vector{Array{T1, 2}}) where {T
                 interpolated_matrices[k][i, j] = v1[k]
                 interpolated_matrices[k + d + 1][i, j] = v2[k]
                 interpolated_matrices[k + 2(d+1)][i, j] = v3[k]
+            end
+        end
+    else
+        for i in 1:MATRIX_DIMENSION
+            for j in 1:MATRIX_DIMENSION
+                v1 = lagrange_precomputed([matrices_to_interpolate[k][i, j] for k in 1:d+1],G,H)
+                v2 = lagrange_precomputed(v1, G, H)
+                v3 = lagrange_precomputed(v2, G, H)
+             
+                for k in 1:d+1
+                    interpolated_matrices[k][i, j] = v1[k]
+                    interpolated_matrices[k + d + 1][i, j] = v2[k]
+                    interpolated_matrices[k + 2(d+1)][i, j] = v3[k]
+                end
             end
         end
     end
