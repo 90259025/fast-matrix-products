@@ -1,5 +1,7 @@
-multithread = true
+multithread=false
 debug = false
+
+# multithread = true
 
 include("types.jl")
 using DSP
