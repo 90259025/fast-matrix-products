@@ -1,10 +1,26 @@
-# multithread=false
+multithread=false
+use_cuda = false
 debug = false
 
 multithread = true
+# use_cuda = true
+
+total_lagrange_time = 0
+total_matrix_prod_time = 0
+total_final_prod_time = 0
+
 
 include("types.jl")
 using DSP
+
+if multithread
+    println("Using ", Threads.nthreads(), " threads")
+end
+
+if use_cuda
+    using CUDA
+    println("Using CUDA")
+end
 
 @doc raw"""
     MP(y, z)
@@ -57,16 +73,32 @@ function MP(y::Array{<: Union{Integer, Rational, IntModQ}}, z::Array{<: Union{In
     
     n₀ = n >> 1
     n₁ = (n + 1) >> 1
-    
-    α = MP(y[(n₀ + 1):end], z[1:(2n₁ - 1)] .+ z[(n₁ + 1):(3n₁ - 1)])
-    
-    if iseven(n)
-        β = MP(y[(n₁ + 1):n] .- y[1:n₀], z[(n₁ + 1):(3n₁ - 1)])
+    if false#multithread
+        Threads.@threads for thread_i = 1:3
+            if thread_i == 1
+                α = MP(y[(n₀ + 1):end], z[1:(2n₁ - 1)] .+ z[(n₁ + 1):(3n₁ - 1)])
+            elseif thread_i == 2
+                if iseven(n)
+                    β = MP(y[(n₁ + 1):n] .- y[1:n₀], z[(n₁ + 1):(3n₁ - 1)])
+                else
+                    β = MP([y[n₀ + 1]; y[(n₁ + 1):n] .- y[1:n₀]],z[(n₁ + 1):(3n₁ - 1)])
+                end
+            else
+                γ = MP(y[1:n₀], z[(n₁ + 1):(n₁ + 2n₀ - 1)] .+ z[(2n₁ + 1):(2n - 1)])
+            end
+        end
+
     else
-        β = MP([y[n₀ + 1]; y[(n₁ + 1):n] .- y[1:n₀]],z[(n₁ + 1):(3n₁ - 1)])
+        α = MP(y[(n₀ + 1):end], z[1:(2n₁ - 1)] .+ z[(n₁ + 1):(3n₁ - 1)])
+        
+        if iseven(n)
+            β = MP(y[(n₁ + 1):n] .- y[1:n₀], z[(n₁ + 1):(3n₁ - 1)])
+        else
+            β = MP([y[n₀ + 1]; y[(n₁ + 1):n] .- y[1:n₀]],z[(n₁ + 1):(3n₁ - 1)])
+        end
+        
+        γ = MP(y[1:n₀], z[(n₁ + 1):(n₁ + 2n₀ - 1)] .+ z[(2n₁ + 1):(2n - 1)])
     end
-    
-    γ = MP(y[1:n₀], z[(n₁ + 1):(n₁ + 2n₀ - 1)] .+ z[(2n₁ + 1):(2n - 1)])
     return [α[1:n₁] .- β[1:n₁]; γ[1:n₀] .+ β[1:n₀]]
 end
 
@@ -272,25 +304,42 @@ function matrix_product(starter_matrices::Vector{Array{T, 2}}, a::S)::Array{T, 2
     #Multiply matrices according to price is right rules
     product_size = floor(Int, a / (2^num_steps))
 
-    return prod(smat[1:product_size])
+    global total_final_prod_time
+    total_final_prod_time = @elapsed return_value = prod(smat[1:product_size])
 
+    println("[Timing] Lagrange: $(total_lagrange_time), Matrix Products: $(total_matrix_prod_time), Final Product: $(total_final_prod_time)")
+
+    return return_value
 end
 
 
 
 function matrix_product_step(smat::Vector{Array{T, 2}}, d::S, j::R)::Vector{Array{T, 2}} where {T <: Union{Integer, Rational, IntModQ}, S <: Integer, R <: Integer}
+    global total_lagrange_time
+
+    total_lagrange_time += @elapsed smat = [smat ; lagrange_matrix(smat)]
     
-    smat = [smat ; lagrange_matrix(smat)]    
+    global total_matrix_prod_time
+
     upper_bound = (2^(j+1))*(d) + 1
 
-    if multithread
-        # quick and dirty way to initialize
-        ans = smat[1:upper_bound]
-        Threads.@threads for thread_i = 1:upper_bound
-            ans[thread_i] = smat[2thread_i - 1] * smat[2thread_i]
-        end
-        return ans
-    end
+    return_value = [smat[i] for i = 1:upper_bound]
 
-    return [smat[2i - 1] * smat[2i] for i = 1:upper_bound]
+    total_matrix_prod_time += @elapsed (function()
+        if multithread
+            # quick and dirty way to initialize
+            ans = smat[1:upper_bound]
+            Threads.@threads for thread_i = 1:upper_bound
+                ans[thread_i] = smat[2thread_i - 1] * smat[2thread_i]
+            end
+
+            return_value = ans
+
+            return
+        end
+
+        return_value = [smat[2i - 1] * smat[2i] for i = 1:upper_bound]
+    end)()
+
+    return return_value
 end
