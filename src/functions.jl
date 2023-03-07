@@ -248,31 +248,19 @@ function matrix_product(starter_matrices::Vector{Array{T, 2}}, a::S)::Array{T, 2
 
 
     # then one big ol product
-    smat_prod = smat[1]
 
     #Multiply matrices according to price is right rules
     product_size = floor(Int, a / (2^num_steps))
 
-    # println(product_size, smat)
+    return prod(smat[1:product_size])
 
-    for j = 2:product_size
-        smat_prod *= smat[j]
-    end
-    
-    return smat_prod
 end
 
 
 
 function matrix_product_step(smat::Vector{Array{T, 2}}, d::S, j::R)::Vector{Array{T, 2}} where {T <: Union{Integer, Rational, IntModQ}, S <: Integer, R <: Integer}
-    smat = [smat ; lagrange_matrix(smat)]
     
-    # I'm sure this can be cleaned up
-    
+    smat = [smat ; lagrange_matrix(smat)]    
     upper_bound = (2^(j+1))*(d) + 1
-
-    return [smat[2i-1] for i = 1:upper_bound] .* [smat[2i] for i = 1:upper_bound]
-    # return_value = [smat[2i - 1] * smat[2i] for i = 1:upper_bound]
-
-    # return return_value
+    return [smat[2i - 1] * smat[2i] for i = 1:upper_bound]
 end
