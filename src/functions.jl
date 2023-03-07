@@ -271,9 +271,8 @@ function matrix_product_step(smat::Vector{Array{T, 2}}, d::S, j::R)::Vector{Arra
     
     upper_bound = (2^(j+1))*(d) + 1
 
-    #println("$upper_bound $(length(smat)) $(size(smat[1], 1))")
+    return [smat[2i-1] for i = 1:upper_bound] .* [smat[2i] for i = 1:upper_bound]
+    # return_value = [smat[2i - 1] * smat[2i] for i = 1:upper_bound]
 
-    return_value = [smat[2i - 1] * smat[2i] for i = 1:upper_bound]
-
-    return return_value
+    # return return_value
 end
